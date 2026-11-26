@@ -9,6 +9,9 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  // Migrations need a direct (non-pooled) connection. Neon's Vercel integration
+  // sets both variables; locally and in CI they can be the same URL.
+  directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
 model SiteSettings {

@@ -2,3 +2,5 @@ design-reference
 pnpm-lock.yaml
 .next
 public/uploads
+test-results
+playwright-report
