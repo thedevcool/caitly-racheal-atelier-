@@ -15,9 +15,10 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "list",
   use: { baseURL: `http://localhost:${PORT}`, trace: "off" },
+  // Mobile first: the phone project is the primary target and runs first
   projects: [
-    { name: "desktop", use: { ...devices["Desktop Chrome"] } },
     { name: "mobile", use: { ...devices["Pixel 7"] } },
+    { name: "desktop", use: { ...devices["Desktop Chrome"] } },
   ],
   webServer: {
     command: `pnpm start -p ${PORT}`,

@@ -56,7 +56,7 @@ export default async function CaseStudy({ params }: Params) {
                   alt={still.alt}
                   width={still.width ?? 1600}
                   height={still.height ?? 1000}
-                  sizes="(max-width: 1240px) 100vw, 1240px"
+                  sizes="(min-width: 1241px) 1240px, 100vw"
                   placeholder={still.blurData ? "blur" : "empty"}
                   blurDataURL={still.blurData ?? undefined}
                   priority

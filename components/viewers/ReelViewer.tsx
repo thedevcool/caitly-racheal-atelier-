@@ -128,7 +128,7 @@ export function ReelViewer({ works, index, onClose }: Props) {
                       src={still.url}
                       alt={still.alt}
                       fill
-                      sizes="(max-width: 600px) 100vw, 480px"
+                      sizes="(min-width: 601px) 480px, 100vw"
                       placeholder={still.blurData ? "blur" : "empty"}
                       blurDataURL={still.blurData ?? undefined}
                     />

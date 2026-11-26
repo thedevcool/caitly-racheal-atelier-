@@ -8,6 +8,20 @@ admin area where Caitly edits everything herself.
 - **Build brief:** [`docs/BRIEF.md`](./docs/BRIEF.md) (read before changing anything).
 - **Approved design:** [`design-reference/index.html`](./design-reference/index.html). Match it; don't reinvent it.
 
+## Mobile first (hard rule)
+
+The site and the admin are built for phones first; larger screens are enhancements.
+
+- **CSS:** base styles are the phone layout, with `min-width` queries only (site 601/901px, admin 521/801px). A
+  unit test fails if a `max-width` media query is added.
+- **Phones get:**
+  - a one-row header (name + menu)
+  - the theme and motion controls inside the full-screen menu
+  - swipe carousels for the reels and prints
+  - single-column rooms, and the hero sized with `svh` so the address bar never makes it jump
+- **Enforced in CI:** every public and admin page is checked at 320, 360, 390 and 414px (no sideways scroll, 44px
+  tap targets, 16px form fields, 12px+ text). The phone test project runs first.
+
 ## What's in it
 
 **Public site**
@@ -130,18 +144,19 @@ See [`.env.example`](./.env.example). Never commit real values.
 
 ## Tests and CI
 
-- **Unit (`tests/unit`, 59 tests):**
+- **Unit (`tests/unit`, 63 tests):**
   - the `*italic*` parser, including that admin-entered HTML never renders
   - WCAG AA contrast for every token in all five tones
   - browser/server validation parity
   - the signed fill-time token
   - email escaping and subject format
-- **Browser (`tests/e2e`, desktop + phone, 72 tests):**
+- **Browser (`tests/e2e`, phone first, then desktop, 88 tests):**
   - every page and room renders with no console errors
   - lightbox, reel viewer, the phone menu, dark/light, the breath and its pause button, reduced motion, the intro
   - the contact form end to end (including the 3-second rule)
   - the admin: lockout, login, a failed save keeps edits, Preview, uploads checked by bytes, an enquiry reaching
     the inbox, CSV
+  - the mobile-first audit at four phone widths, on every public and admin page
   - axe on every page type in both themes
   - SEO files and security headers
 

@@ -36,12 +36,13 @@ test("filters and the lightbox work with keyboard and buttons", async ({ page })
 
 test("the reel viewer opens from the home phones and closes with Esc", async ({ page }) => {
   await page.goto("/");
-  await page.locator(".phone-hit").first().click({ force: true }); // the phones float, so skip the stability wait
+  // The middle phone: centred in the phone carousel, and centre of the fanned trio on desktop
+  await page.locator(".phone").nth(1).locator(".phone-hit").click({ force: true }); // phones float; skip the stability wait
   const reels = page.getByRole("dialog", { name: "Reel viewer" });
   await expect(reels).toBeVisible();
-  await expect(reels.locator(".viewer-count")).toHaveText("1 / 3");
-  await page.keyboard.press("ArrowDown");
   await expect(reels.locator(".viewer-count")).toHaveText("2 / 3");
+  await page.keyboard.press("ArrowDown");
+  await expect(reels.locator(".viewer-count")).toHaveText("3 / 3");
   await page.keyboard.press("Escape");
   await expect(reels).toBeHidden();
 });

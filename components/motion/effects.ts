@@ -12,7 +12,7 @@ type Ctx = { gsap: G; ScrollTrigger: typeof ST; fine: boolean; loops: GSAPTween[
 
 const SILK = "silk"; // CustomEase "0.22, 1, 0.36, 1", registered in MotionRoot
 const below = (el: Element) => el.getBoundingClientRect().top > window.innerHeight * 0.92;
-const mobile = () => window.matchMedia("(max-width: 600px)").matches;
+const mobile = () => !window.matchMedia("(min-width: 601px)").matches; // phones are the base case
 
 /** Wrap each word of an element in a mask + inner span, keeping <em> and spacing. */
 function splitWords(el: HTMLElement) {

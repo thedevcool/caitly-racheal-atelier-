@@ -1,6 +1,13 @@
 @import "tailwindcss";
 
 /* ==========================================================================
+   MOBILE FIRST (hard rule): base styles are for phones; larger screens are
+   enhanced with min-width queries only. Breakpoints: 601px (large phones →
+   tablets: fanned phones, gallery wall) and 901px (desktop: two-column rooms,
+   inline nav). Never add a max-width layout query.
+   ========================================================================== */
+
+/* ==========================================================================
    Caitly Racheal Atelier: design tokens
    VOICE: a luxury atelier announcing itself: confident, sensual, unhurried.
    The approved reference is the DARK theme. LIGHT is an ivory gallery-wall
@@ -169,6 +176,10 @@ figure {
   background: var(--bg);
   color: var(--ink);
   padding: clamp(64px, 9vw, 140px) max(5vw, 20px);
+  /* Full-bleed swipe rows breathe (scale) on phones; clipping each band
+     sideways means no animation can ever make the page scroll sideways.
+     (clip, unlike hidden, creates no scroll container.) */
+  overflow-x: clip;
 }
 .sr-only {
   position: absolute;
@@ -264,6 +275,8 @@ h2 {
   display: flex;
   align-items: baseline;
   gap: 10px;
+  min-height: 44px;
+  padding-top: 6px;
   text-decoration: none;
 }
 .brand b {
@@ -284,11 +297,31 @@ h2 {
   display: flex;
   gap: 10px;
 }
+/* Phones: the header is just the name and the menu button (the theme and
+   motion controls are inside the menu). From 601px they join the header. */
+.nav-buttons > .theme-toggle:not(.menu-btn),
+.nav-buttons > .breath-toggle {
+  display: none;
+}
+@media (min-width: 601px) {
+  .nav-buttons > .theme-toggle:not(.menu-btn),
+  .nav-buttons > .breath-toggle {
+    display: grid;
+  }
+}
+.nav {
+  flex-wrap: nowrap;
+}
 .links {
-  display: flex;
+  display: none; /* phones use the full-screen menu */
   flex-wrap: wrap;
   gap: 24px;
   font-size: 14px;
+}
+@media (min-width: 901px) {
+  .links {
+    display: flex;
+  }
 }
 .links a {
   text-decoration: none;
@@ -329,7 +362,8 @@ h2 {
    ========================================================================== */
 .hero {
   position: relative;
-  min-height: min(100vh, 960px);
+  min-height: 100vh; /* fallback */
+  min-height: min(100svh, 960px); /* svh: the address bar showing/hiding never resizes the hero */
   display: flex;
   align-items: flex-end;
   overflow: hidden;
@@ -357,18 +391,30 @@ h2 {
   transform: scale(1.06);
   animation: drift 18s ease-in-out infinite alternate;
 }
+/* Phones: the copy spans the full width over the bright silk, so the scrim
+   rises from the bottom (keeps the intro at AA). Wider screens: side scrim. */
 .hero::after {
   content: "";
   position: absolute;
   inset: 0;
-  background:
-    linear-gradient(
-      100deg,
-      rgb(var(--scrim) / 0.92) 0%,
-      rgb(var(--scrim) / 0.55) 45%,
-      rgb(var(--scrim) / 0.05) 75%
-    ),
-    linear-gradient(0deg, rgb(var(--scrim) / 0.9), transparent 40%);
+  background: linear-gradient(
+    0deg,
+    rgb(var(--scrim) / 0.94) 0%,
+    rgb(var(--scrim) / 0.82) 50%,
+    rgb(var(--scrim) / 0.25) 100%
+  );
+}
+@media (min-width: 601px) {
+  .hero::after {
+    background:
+      linear-gradient(
+        100deg,
+        rgb(var(--scrim) / 0.92) 0%,
+        rgb(var(--scrim) / 0.55) 45%,
+        rgb(var(--scrim) / 0.05) 75%
+      ),
+      linear-gradient(0deg, rgb(var(--scrim) / 0.9), transparent 40%);
+  }
 }
 .hero .in {
   position: relative;
@@ -443,15 +489,20 @@ h2 {
    ========================================================================== */
 .room {
   display: grid;
-  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: clamp(32px, 6vw, 96px);
   align-items: center;
 }
-.room.flip {
-  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
-}
-.room.flip .text {
-  order: 2;
+@media (min-width: 901px) {
+  .room {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  }
+  .room.flip {
+    grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  }
+  .room.flip .text {
+    order: 2;
+  }
 }
 .roomtag {
   display: flex;
@@ -484,16 +535,27 @@ h2 {
 }
 
 /* Phones (Screening Room). The device stays black in both themes. */
+/* Phones: a centred swipe carousel (scroll-snap) with dots */
 .phones {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   gap: clamp(10px, 2vw, 22px);
-  padding: 20px 0;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding: 30px 19vw 34px;
+  margin: 0 calc(-1 * max(5vw, 20px));
+  scrollbar-width: none;
+}
+.phones::-webkit-scrollbar {
+  display: none;
 }
 .phone {
   position: relative;
-  flex: 0 1 230px;
+  flex: 0 0 62vw;
+  scroll-snap-align: center;
+  scale: 0.88;
+  transition: scale 0.6s var(--ease-silk);
   aspect-ratio: 9/19;
   border-radius: 38px;
   background: #050505;
@@ -502,15 +564,33 @@ h2 {
     0 40px 80px var(--device-shadow),
     inset 0 0 0 1.5px #2a2722;
 }
-.phone:nth-child(1) {
-  transform: rotate(-7deg) translateY(28px);
+.phone.is-active {
+  scale: 1;
 }
-.phone:nth-child(3) {
-  transform: rotate(7deg) translateY(28px);
-}
-.phone:nth-child(2) {
-  z-index: 2;
-  flex-basis: 260px;
+/* Wider screens: the three phones side by side, outer two tilted */
+@media (min-width: 601px) {
+  .phones {
+    justify-content: center;
+    overflow: visible;
+    scroll-snap-type: none;
+    padding: 20px 0;
+    margin: 0;
+  }
+  .phone,
+  .phone.is-active {
+    flex: 0 1 230px;
+    scale: none;
+  }
+  .phone:nth-child(1) {
+    transform: rotate(-7deg) translateY(28px);
+  }
+  .phone:nth-child(3) {
+    transform: rotate(7deg) translateY(28px);
+  }
+  .phone:nth-child(2) {
+    z-index: 2;
+    flex-basis: 260px;
+  }
 }
 .screen {
   position: relative;
@@ -549,6 +629,7 @@ h2 {
 }
 .cap small {
   color: #cfc6b8;
+  font-size: max(12px, 0.85em);
 }
 .play {
   position: absolute;
@@ -579,15 +660,24 @@ h2 {
 }
 
 /* Frames (Shopfront) */
+/* Frames: a swipe row with peeking edges */
 .frames {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: flex-start;
   gap: clamp(14px, 3vw, 36px);
-  padding: 30px 0 10px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding: 30px 16vw 24px;
+  margin: 0 calc(-1 * max(5vw, 20px));
+  scrollbar-width: none;
+}
+.frames::-webkit-scrollbar {
+  display: none;
 }
 .frame {
-  flex: 0 1 220px;
+  flex: 0 0 66vw;
+  scroll-snap-align: center;
   background: #f6f1e8;
   padding: clamp(10px, 1.6vw, 18px);
   border: clamp(6px, 1vw, 10px) solid #1e1b18;
@@ -595,10 +685,23 @@ h2 {
     0 30px 50px rgba(40, 30, 20, 0.28),
     0 6px 12px rgba(40, 30, 20, 0.18);
 }
-.frame:nth-child(2) {
-  /* The reference declares margin-top:-24px but its inline margin:0 overrides it,
-     so the approved render has all three frames top-aligned. Match the render. */
-  flex-basis: 270px;
+/* Wider screens: hung side by side like a gallery wall */
+@media (min-width: 601px) {
+  .frames {
+    justify-content: center;
+    overflow: visible;
+    scroll-snap-type: none;
+    padding: 30px 0 10px;
+    margin: 0;
+  }
+  .frame {
+    flex: 0 1 220px;
+  }
+  .frame:nth-child(2) {
+    /* The reference declares margin-top:-24px but its inline margin:0 overrides it,
+       so the approved render has all three frames top-aligned. Match the render. */
+    flex-basis: 270px;
+  }
 }
 .frame img {
   aspect-ratio: 4/5;
@@ -701,11 +804,16 @@ h2 {
 }
 .tours {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px;
   padding: 14px;
   background: #f4eee6;
   color: #1a1715;
+}
+@media (min-width: 601px) {
+  .tours {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 .tour {
   background: #fff;
@@ -829,9 +937,14 @@ h2 {
   position: relative;
   z-index: 2;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: clamp(32px, 6vw, 96px);
   align-items: center;
+}
+@media (min-width: 901px) {
+  .contact .wrap {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
 }
 .contact h2 {
   font-size: clamp(52px, 7.5vw, 112px);
@@ -915,6 +1028,10 @@ h2 {
   color: var(--muted);
 }
 .footer a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 4px;
   text-decoration: none;
 }
 .footer a:hover {
@@ -1025,63 +1142,7 @@ html[data-motion="paused"] .contact-media .contact-img {
 /* ==========================================================================
    Responsive (breakpoints match the reference)
    ========================================================================== */
-@media (max-width: 900px) {
-  .room,
-  .room.flip,
-  .contact .wrap {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .room.flip .text {
-    order: 0;
-  }
-  .links {
-    display: none;
-  }
-}
-@media (max-width: 600px) {
-  /* On phones the copy spans the full width, so it sits over the bright part
-     of the silk. A taller scrim keeps the intro at AA contrast in both themes. */
-  .hero::after {
-    background: linear-gradient(
-      0deg,
-      rgb(var(--scrim) / 0.94) 0%,
-      rgb(var(--scrim) / 0.82) 50%,
-      rgb(var(--scrim) / 0.25) 100%
-    );
-  }
-  .phone {
-    border-radius: 26px;
-    padding: 6px;
-  }
-  .screen {
-    border-radius: 21px;
-  }
-  .notch {
-    width: 50px;
-    margin-left: -25px;
-    top: 12px;
-    height: 14px;
-  }
-  .cap {
-    font-size: 10px;
-    left: 9px;
-    right: 9px;
-  }
-  .play {
-    width: 40px;
-    height: 40px;
-    margin: -20px 0 0 -20px;
-  }
-  .frames .frame:nth-child(3) {
-    display: none;
-  }
-  .tours {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .tours .tour:nth-child(n + 2) {
-    display: none;
-  }
-}
+/* (Breakpoints live with each component above; see MOBILE FIRST at the top.) */
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -2198,11 +2259,11 @@ html.has-cursor select {
 
 /* ---- Mobile menu ---- */
 .menu-btn {
-  display: none;
+  display: grid;
 }
-@media (max-width: 900px) {
+@media (min-width: 901px) {
   .menu-btn {
-    display: grid;
+    display: none;
   }
 }
 .menu {
@@ -2274,73 +2335,69 @@ html.has-cursor select {
   color: #b3aa9c;
   font-size: 14px;
 }
-
-/* ---- Screening Room: carousel on phones ---- */
-.phone-dots {
-  display: none;
+.menu-foot p {
+  margin: 16px 0 0;
 }
-@media (max-width: 600px) {
-  .phones {
-    justify-content: flex-start;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    padding: 30px 19vw 34px;
-    margin: 0 calc(-1 * max(5vw, 20px));
-    scrollbar-width: none;
-  }
-  .phones::-webkit-scrollbar {
+.menu-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+}
+.menu-tool {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #ede6da;
+}
+/* the menu is always ink-black, so its buttons use the dark tokens */
+.menu .theme-toggle,
+.menu .breath-toggle {
+  --line: rgba(237, 230, 218, 0.25);
+  --scrim: 11 11 12;
+  --ink: #ede6da;
+}
+@media (prefers-reduced-motion: reduce) {
+  .menu-tool-motion {
     display: none;
   }
-  .phone,
-  .phone:nth-child(2) {
-    flex: 0 0 62vw;
-    scroll-snap-align: center;
-    transform: none;
-    scale: 0.88;
-    transition: scale 0.6s var(--ease-silk);
-  }
-  .phone:nth-child(1),
-  .phone:nth-child(3) {
-    transform: none;
-  }
-  .phone.is-active {
-    scale: 1;
-  }
-  .cap {
-    font-size: 13px;
-    left: 14px;
-    right: 14px;
-  }
+}
+
+/* ---- Screening Room: carousel on phones ---- */
+/* Carousel dots: phones only */
+.phone-dots {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+.phone-dots button {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.phone-dots button::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--muted);
+  opacity: 0.45;
+  transition:
+    opacity 0.3s ease,
+    transform 0.3s ease;
+}
+.phone-dots button[aria-current="true"]::before {
+  opacity: 1;
+  background: var(--accent);
+  transform: scale(1.25);
+}
+@media (min-width: 601px) {
   .phone-dots {
-    display: flex;
-    justify-content: center;
-    gap: 4px;
-    margin-top: 4px;
-  }
-  .phone-dots button {
-    width: 44px;
-    height: 44px;
-    display: grid;
-    place-items: center;
-    border: 0;
-    background: none;
-    cursor: pointer;
-  }
-  .phone-dots button::before {
-    content: "";
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: var(--muted);
-    opacity: 0.45;
-    transition:
-      opacity 0.3s ease,
-      transform 0.3s ease;
-  }
-  .phone-dots button[aria-current="true"]::before {
-    opacity: 1;
-    background: var(--accent);
-    transform: scale(1.25);
+    display: none;
   }
 }
 .phone-hit {
@@ -2354,31 +2411,15 @@ html.has-cursor select {
     calc(var(--sx, 0) * 1px) 30px 50px rgba(40, 30, 20, 0.28),
     calc(var(--sx, 0) * 0.4px) 6px 12px rgba(40, 30, 20, 0.18);
 }
-@media (max-width: 600px) {
-  .frames {
-    justify-content: flex-start;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
-    padding: 30px 16vw 24px;
-    margin: 0 calc(-1 * max(5vw, 20px));
-    scrollbar-width: none;
-  }
-  .frames::-webkit-scrollbar {
-    display: none;
-  }
-  .frames .frame,
-  .frames .frame:nth-child(2),
-  .frames .frame:nth-child(3) {
-    display: block;
-    flex: 0 0 66vw;
-    scroll-snap-align: center;
-    margin-top: 0;
-  }
-}
 
 /* ---- Studio: the browser's inner page scrolls ---- */
+/* The window shows exactly the site's hero (16:10) plus one row of tour
+   cards, like the approved design; the rest of the inner page scrolls. */
+.browser {
+  container-type: inline-size;
+}
 .viewport {
-  aspect-ratio: 16 / 13.2;
+  height: calc(100cqw * 10 / 16 + 91px);
   overflow-y: auto;
   overscroll-behavior: contain;
   scrollbar-width: none;
@@ -2600,7 +2641,10 @@ html.lenis body {
   left: 16px;
   top: -100px;
   z-index: 200;
-  padding: 12px 18px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 18px;
   border-radius: 999px;
   background: var(--gold);
   color: #0b0b0c;

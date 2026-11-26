@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useCallback, useRef, useState } from "react";
 import { useDialog } from "./viewers/useDialog";
+import { ThemeToggle } from "./ThemeToggle";
+import { BreathToggle } from "./BreathToggle";
 
 type Room = { slug: string; name: string; korean: string };
 
@@ -88,7 +90,19 @@ export function MobileMenu({ rooms }: { rooms: Room[] }) {
             </Link>
           </li>
         </ul>
-        <p className="menu-foot">Swipe up to close</p>
+        <div className="menu-foot">
+          {/* On phones the header keeps only the name and this menu, so the
+              theme and motion controls live here, with words beside them */}
+          <div className="menu-tools">
+            <span className="menu-tool">
+              <ThemeToggle /> Light or dark
+            </span>
+            <span className="menu-tool menu-tool-motion">
+              <BreathToggle /> Pause motion
+            </span>
+          </div>
+          <p>Swipe up to close</p>
+        </div>
       </dialog>
     </>
   );

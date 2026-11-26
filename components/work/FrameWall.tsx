@@ -22,7 +22,7 @@ export function FrameWall({ works, roomSlug }: { works: ViewWork[]; roomSlug: st
                   alt={w.media.alt}
                   width={w.media.width ?? 900}
                   height={w.media.height ?? 1125}
-                  sizes="(max-width: 600px) 70vw, 270px"
+                  sizes="(min-width: 601px) 270px, 66vw"
                   placeholder={w.media.blurData ? "blur" : "empty"}
                   blurDataURL={w.media.blurData ?? undefined}
                 />

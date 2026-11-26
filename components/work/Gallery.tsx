@@ -61,7 +61,7 @@ export function Gallery({ works, roomSlug, reels }: Props) {
                         alt=""
                         width={still.width ?? 900}
                         height={still.height ?? 1125}
-                        sizes="(max-width: 600px) 50vw, (max-width: 1100px) 33vw, 400px"
+                        sizes="(min-width: 1101px) 400px, (min-width: 601px) 33vw, 50vw"
                         placeholder={still.blurData ? "blur" : "empty"}
                         blurDataURL={still.blurData ?? undefined}
                       />

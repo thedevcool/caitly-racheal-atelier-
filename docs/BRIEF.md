@@ -471,6 +471,16 @@ TURNSTILE_SECRET_KEY=
 
 ## 13. Rules for contributors
 
+- **MOBILE FIRST IS A HARD RULE.** Design and build for a phone first; larger screens are an enhancement.
+  - CSS: base styles are the phone layout. Use only `min-width` media queries (breakpoints 601px and 901px for
+    the site, 521px and 801px for the admin). Never add a `max-width` layout query; `tests/unit/mobile-first.test.ts`
+    fails the build if one appears.
+  - Every page must pass `tests/e2e/mobile.spec.ts` at 320, 360, 390 and 414px: no sideways scroll, 44×44px tap
+    targets, 16px+ form fields, 12px+ text. The phone Playwright project runs first.
+  - New features start with the phone interaction (thumb reach, swipe, tap), then add hover/pointer extras for
+    desktop. Nothing may depend on hover alone.
+  - Check performance on mobile Lighthouse, not desktop.
+
 - The reference design is approved. Don't change the layout, palette or type without asking.
 - Never invent testimonials, client names, results or statistics. Use clearly marked placeholders and the `isPlaceholder` flag.
 - Ask before adding any paid service beyond those listed.

@@ -42,7 +42,7 @@ export function Studio({ room, flip }: { room: RoomWithContent; flip: boolean })
             {/* The inner page scrolls as the visitor scrolls (or swipes it on touch) */}
             <div className="viewport" data-studio-viewport tabIndex={-1} aria-hidden="true">
               <div className="site">
-                <MediaImage media={site.media} alt="" sizes="(max-width: 900px) 90vw, 700px" />
+                <MediaImage media={site.media} alt="" sizes="(min-width: 901px) 700px, 90vw" />
                 <div className="sn">
                   <b>{site.title}</b>
                   {meta.nav && <span>{meta.nav}</span>}

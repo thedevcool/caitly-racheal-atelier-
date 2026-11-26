@@ -31,14 +31,14 @@ export function ReelPhones({ works }: { works: ViewWork[] }) {
         for (const e of entries) {
           const i = phones.indexOf(e.target as HTMLElement);
           if (e.isIntersecting) setSeen((s) => Object.assign([...s], { [i]: true }));
-          if (e.intersectionRatio > 0.75 && matchMedia("(max-width: 600px)").matches) setActive(i);
+          if (e.intersectionRatio > 0.75 && !matchMedia("(min-width: 601px)").matches) setActive(i);
         }
       },
-      { root: matchMedia("(max-width: 600px)").matches ? el : null, threshold: [0.4, 0.8] },
+      { root: !matchMedia("(min-width: 601px)").matches ? el : null, threshold: [0.4, 0.8] },
     );
     phones.forEach((p) => io.observe(p));
     // start the carousel on the middle phone
-    if (matchMedia("(max-width: 600px)").matches && phones[1])
+    if (!matchMedia("(min-width: 601px)").matches && phones[1])
       el.scrollLeft = phones[1].offsetLeft - (el.clientWidth - phones[1].offsetWidth) / 2;
     return () => io.disconnect();
   }, []);
@@ -65,7 +65,7 @@ export function ReelPhones({ works }: { works: ViewWork[] }) {
                         alt={still.alt}
                         width={still.width ?? 720}
                         height={still.height ?? 1280}
-                        sizes="(max-width: 600px) 60vw, 260px"
+                        sizes="(min-width: 601px) 260px, 62vw"
                         placeholder={still.blurData ? "blur" : "empty"}
                         blurDataURL={still.blurData ?? undefined}
                       />

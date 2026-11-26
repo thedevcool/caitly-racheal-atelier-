@@ -64,6 +64,7 @@ export const viewport: Viewport = {
 
 // A fixed string (no visitor or admin text), so inlining it is safe.
 const EARLY = `(function(){var d=document.documentElement;d.classList.add('js');
+try{if(localStorage.getItem('atelier-motion')==='paused')d.dataset.motion='paused'}catch(e){}
 if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;d.classList.add('motion');
 try{if(location.pathname.indexOf('/admin')!==0&&!sessionStorage.getItem('atelier-intro')){
 d.classList.add('intro');sessionStorage.setItem('atelier-intro','1');

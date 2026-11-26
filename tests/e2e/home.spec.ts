@@ -1,5 +1,16 @@
 import { expect, test } from "./fixtures";
 import { watchErrors } from "./helpers";
+import type { Page } from "@playwright/test";
+
+/** Phones keep the theme and motion controls in the menu (mobile first). */
+async function controls(page: Page) {
+  const menu = page.getByRole("button", { name: "Open menu" });
+  if (await menu.isVisible()) {
+    await menu.click();
+    return page.getByRole("dialog", { name: "Menu" });
+  }
+  return page.locator("nav.nav");
+}
 
 test("home renders every section from the database", async ({ page }) => {
   const errors = watchErrors(page);
@@ -44,30 +55,36 @@ test("theme toggle switches dark and light and remembers the choice", async ({ p
   const html = page.locator("html");
   await expect(html).toHaveAttribute("data-theme", "dark");
 
-  await page.getByRole("button", { name: "Switch to light mode" }).click();
+  await (await controls(page)).getByRole("button", { name: "Switch to light mode" }).click();
+  await page.keyboard.press("Escape");
   await expect(html).toHaveAttribute("data-theme", "light");
   // The body fades between themes over 0.6s; toHaveCSS retries until it settles.
   await expect(page.locator("body")).toHaveCSS("background-color", "rgb(246, 241, 232)");
 
   await page.reload();
   await expect(html).toHaveAttribute("data-theme", "light");
-  await expect(page.getByRole("button", { name: "Switch to dark mode" })).toBeVisible();
+  await expect((await controls(page)).getByRole("button", { name: "Switch to dark mode" })).toBeVisible();
 });
 
-test("the page breathes, and the breath can be paused", async ({ page }) => {
+test("the page breathes, and the breath can be paused", async ({ page, isMobile }) => {
+  test.info().annotations.push({
+    type: "device",
+    description: isMobile ? "pause lives in the menu" : "pause in the header",
+  });
   await page.goto("/");
   const breathing = await page.evaluate(
     () => document.getAnimations().filter((a) => /breathe/.test((a as CSSAnimation).animationName)).length,
   );
   expect(breathing).toBeGreaterThan(5);
 
-  await page.getByRole("button", { name: "Pause the breathing animation" }).click();
+  await (await controls(page)).getByRole("button", { name: "Pause the breathing animation" }).click();
+  await page.keyboard.press("Escape");
   await expect(page.locator("html")).toHaveAttribute("data-motion", "paused");
   await expect(page.locator(".breath-veil")).toHaveCSS("animation-play-state", "paused");
 
   await page.reload();
   await expect(page.locator("html")).toHaveAttribute("data-motion", "paused");
-  await page.getByRole("button", { name: "Resume the breathing animation" }).click();
+  await (await controls(page)).getByRole("button", { name: "Resume the breathing animation" }).click();
   await expect(page.locator("html")).not.toHaveAttribute("data-motion", "paused");
 });
 

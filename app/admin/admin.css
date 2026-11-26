@@ -1,4 +1,7 @@
-/* Admin: Caitly's atelier back room. Same type and palette, calmer and lighter.
+/* MOBILE FIRST (hard rule): Caitly mostly edits from her phone. Base styles
+   are the phone layout; min-width queries add the desktop sidebar and grids.
+
+   Admin: Caitly's atelier back room. Same type and palette, calmer and lighter.
    Always the light tone, so long editing sessions stay easy on the eyes. */
 
 .admin-root {
@@ -13,7 +16,8 @@
 /* The site's breathing veil, cursor and grain stay out of the admin */
 body:has(.admin-root) .breath-veil,
 body:has(.admin-root) .grain,
-body:has(.admin-root) .intro-overlay {
+body:has(.admin-root) .intro-overlay,
+body:has(.admin-root) .skip {
   display: none;
 }
 .admin-root a {
@@ -26,8 +30,14 @@ body:has(.admin-root) .intro-overlay {
 .a-skip {
   position: absolute;
   left: -9999px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
 }
 .a-skip:focus {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
   left: 12px;
   top: 12px;
   z-index: 10;
@@ -39,8 +49,8 @@ body:has(.admin-root) .intro-overlay {
 /* ---- Shell ---- */
 .a-shell {
   display: grid;
-  grid-template-columns: 220px minmax(0, 1fr);
-  grid-template-rows: auto 1fr;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto auto 1fr;
   min-height: 100vh;
 }
 .a-top {
@@ -61,6 +71,10 @@ body:has(.admin-root) .intro-overlay {
   font-size: 24px;
   font-weight: 500;
   text-decoration: none;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 .a-brand .ko {
   font-size: 13px;
@@ -89,19 +103,56 @@ body:has(.admin-root) .intro-overlay {
   color: var(--accent);
 }
 .a-nav {
-  border-right: 1px solid var(--line);
-  padding: 24px 12px;
+  border-bottom: 1px solid var(--line);
+  padding: 8px 0;
+  position: sticky;
+  top: 73px;
+  z-index: 4;
+  background: var(--bg);
 }
 .a-nav ul {
   list-style: none;
   margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 2px;
-  position: sticky;
-  top: 90px;
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  padding: 0 12px;
+  gap: 4px;
+  scrollbar-width: none;
+}
+.a-nav li {
+  flex: none;
+  scroll-snap-align: start;
+}
+.a-top-actions .a-link:first-child {
+  display: none; /* "View site" lives in the nav row's reach on phones */
+}
+@media (min-width: 801px) {
+  .a-shell {
+    grid-template-columns: 220px minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+  }
+  .a-nav {
+    position: static;
+    border-bottom: 0;
+    border-right: 1px solid var(--line);
+    padding: 24px 12px;
+  }
+  .a-nav ul {
+    display: grid;
+    gap: 2px;
+    overflow: visible;
+    padding: 0;
+    position: sticky;
+    top: 90px;
+  }
+  .a-top-actions .a-link:first-child {
+    display: inline-flex;
+  }
 }
 .a-nav a {
+  white-space: nowrap;
+  gap: 8px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -136,41 +187,6 @@ body:has(.admin-root) .intro-overlay {
   padding: clamp(20px, 4vw, 48px) clamp(16px, 4vw, 56px) 120px;
   max-width: 900px;
   width: 100%;
-}
-
-@media (max-width: 800px) {
-  .a-shell {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .a-nav {
-    border-right: 0;
-    border-bottom: 1px solid var(--line);
-    padding: 8px 0;
-    position: sticky;
-    top: 73px;
-    z-index: 4;
-    background: var(--bg);
-  }
-  .a-nav ul {
-    display: flex;
-    overflow-x: auto;
-    scroll-snap-type: x proximity;
-    padding: 0 12px;
-    gap: 4px;
-    position: static;
-    scrollbar-width: none;
-  }
-  .a-nav li {
-    flex: none;
-    scroll-snap-align: start;
-  }
-  .a-nav a {
-    gap: 8px;
-    white-space: nowrap;
-  }
-  .a-top-actions .a-link:first-child {
-    display: none;
-  }
 }
 
 /* ---- Type ---- */
@@ -368,7 +384,7 @@ body:has(.admin-root) .intro-overlay {
 }
 .a-checklist li {
   display: grid;
-  grid-template-columns: 56px minmax(0, 1fr) auto;
+  grid-template-columns: 48px minmax(0, 1fr);
   align-items: center;
   gap: 14px;
   padding: 8px;
@@ -380,6 +396,17 @@ body:has(.admin-root) .intro-overlay {
   height: 56px;
   object-fit: cover;
   border-radius: 8px;
+}
+.a-checklist .a-btn {
+  grid-column: 1 / -1;
+}
+@media (min-width: 521px) {
+  .a-checklist li {
+    grid-template-columns: 56px minmax(0, 1fr) auto;
+  }
+  .a-checklist .a-btn {
+    grid-column: auto;
+  }
 }
 .a-checklist b {
   display: block;
@@ -651,7 +678,7 @@ body:has(.admin-root) .intro-overlay {
 }
 .a-row {
   display: grid;
-  grid-template-columns: 44px minmax(0, 1fr) auto;
+  grid-template-columns: 44px minmax(0, 1fr);
   align-items: center;
   gap: 6px;
   padding: 6px;
@@ -712,9 +739,19 @@ body:has(.admin-root) .intro-overlay {
 .a-updown {
   display: flex;
   gap: 2px;
+  grid-column: 2;
+  justify-content: flex-end;
+}
+@media (min-width: 521px) {
+  .a-row {
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+  }
+  .a-updown {
+    grid-column: auto;
+  }
 }
 .a-updown button {
-  width: 40px;
+  width: 44px;
   height: 44px;
   border: 0;
   background: none;
@@ -836,8 +873,8 @@ body:has(.admin-root) .intro-overlay {
 }
 .a-dl {
   display: grid;
-  grid-template-columns: 110px minmax(0, 1fr);
-  gap: 12px 20px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 2px;
   margin: 28px 0;
   padding: 24px;
   border-radius: 18px;
@@ -849,26 +886,20 @@ body:has(.admin-root) .intro-overlay {
   font-size: 14px;
 }
 .a-dl dd {
-  margin: 0;
+  margin: 0 0 12px;
+}
+@media (min-width: 521px) {
+  .a-dl {
+    grid-template-columns: 110px minmax(0, 1fr);
+    gap: 12px 20px;
+  }
+  .a-dl dd {
+    margin: 0;
+  }
 }
 .a-brief {
   white-space: pre-wrap;
   line-height: 1.6;
-}
-@media (max-width: 520px) {
-  .a-dl {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 2px;
-  }
-  .a-dl dd {
-    margin-bottom: 12px;
-  }
-  .a-checklist li {
-    grid-template-columns: 48px minmax(0, 1fr);
-  }
-  .a-checklist .a-btn {
-    grid-column: 1 / -1;
-  }
 }
 
 /* ---- Login ---- */
@@ -899,13 +930,4 @@ body:has(.admin-root) .intro-overlay {
 
 .a-editing {
   scroll-margin-top: 140px;
-}
-@media (max-width: 520px) {
-  .a-row {
-    grid-template-columns: 40px minmax(0, 1fr);
-  }
-  .a-updown {
-    grid-column: 2;
-    justify-content: flex-end;
-  }
 }
