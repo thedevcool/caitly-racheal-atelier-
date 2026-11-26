@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { TypedCaption } from "@/components/viewers/TypedCaption";
 import type { ViewWork } from "@/lib/view";
 import { ReelViewer } from "@/components/viewers/ReelViewer";
 import { InViewVideo } from "@/components/viewers/InViewVideo";
@@ -16,14 +17,40 @@ const PlayIcon = () => (
 export function ReelPhones({ works }: { works: ViewWork[] }) {
   const [open, setOpen] = useState<number | null>(null);
   const close = useCallback(() => setOpen(null), []);
+  const row = useRef<HTMLDivElement>(null);
+  const [active, setActive] = useState(1); // the middle phone leads
+  const [seen, setSeen] = useState<boolean[]>([]);
+
+  // Which phones are on screen (captions type on) and, in the phone carousel, which is centred
+  useEffect(() => {
+    const el = row.current;
+    if (!el) return;
+    const phones = [...el.querySelectorAll<HTMLElement>(".phone")];
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          const i = phones.indexOf(e.target as HTMLElement);
+          if (e.isIntersecting) setSeen((s) => Object.assign([...s], { [i]: true }));
+          if (e.intersectionRatio > 0.75 && matchMedia("(max-width: 600px)").matches) setActive(i);
+        }
+      },
+      { root: matchMedia("(max-width: 600px)").matches ? el : null, threshold: [0.4, 0.8] },
+    );
+    phones.forEach((p) => io.observe(p));
+    // start the carousel on the middle phone
+    if (matchMedia("(max-width: 600px)").matches && phones[1])
+      el.scrollLeft = phones[1].offsetLeft - (el.clientWidth - phones[1].offsetWidth) / 2;
+    return () => io.disconnect();
+  }, []);
+
   if (!works.length) return null;
   return (
     <>
-      <div className="phones" role="group" aria-label={`${works.length} sample vertical video ads`}>
+      <div ref={row} className="phones" role="group" aria-label={`${works.length} sample vertical video ads`}>
         {works.map((w, i) => {
           const still = w.poster ?? w.media;
           return (
-            <figure className="phone" key={w.id}>
+            <figure className={i === active ? "phone is-active" : "phone"} key={w.id}>
               <button
                 type="button"
                 className="phone-hit"
@@ -53,7 +80,7 @@ export function ReelPhones({ works }: { works: ViewWork[] }) {
                   </span>
                   <span className="sheen" aria-hidden="true" />
                   <span className="cap">
-                    {w.hook && <b>{w.hook}</b>}
+                    {w.hook && <TypedCaption text={w.hook} active={!!seen[i]} />}
                     <small>{[w.title, w.category].filter(Boolean).join(" · ")}</small>
                   </span>
                 </span>
@@ -61,6 +88,24 @@ export function ReelPhones({ works }: { works: ViewWork[] }) {
             </figure>
           );
         })}
+      </div>
+      <div className="phone-dots" role="group" aria-label="Choose a reel">
+        {works.map((w, i) => (
+          <button
+            key={w.id}
+            type="button"
+            aria-label={`Show ${w.title}`}
+            aria-current={i === active}
+            onClick={() => {
+              const p = row.current?.querySelectorAll<HTMLElement>(".phone")[i];
+              if (p && row.current)
+                row.current.scrollTo({
+                  left: p.offsetLeft - (row.current.clientWidth - p.offsetWidth) / 2,
+                  behavior: "smooth",
+                });
+            }}
+          />
+        ))}
       </div>
       <ReelViewer works={works} index={open} onClose={close} />
     </>

@@ -214,9 +214,10 @@ async function main() {
     },
   });
 
-  const ink = await upload(
-    "inkwash.jpg",
-    "Korean ink-wash painting of misty mountain ridges with a red seal",
+  // The red seal is stamped on by the site (see Library), so the placeholder painting is seal-free.
+  const ink = await uploadFrom(
+    path.join(process.cwd(), "prisma", "seed-assets", "inkwash-unsealed.jpg"),
+    "Korean ink-wash painting of misty mountain ridges",
   );
   await db.work.create({
     data: {

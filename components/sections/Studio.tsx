@@ -39,27 +39,45 @@ export function Studio({ room, flip }: { room: RoomWithContent; flip: boolean })
               <i />
               {site.externalUrl && <span>{site.externalUrl.replace(/^https?:\/\//, "")}</span>}
             </div>
-            <div className="site" aria-hidden="true">
-              <MediaImage media={site.media} alt="" sizes="(max-width: 900px) 90vw, 700px" />
-              <div className="sn">
-                <b>{site.title}</b>
-                {meta.nav && <span>{meta.nav}</span>}
+            {/* The inner page scrolls as the visitor scrolls (or swipes it on touch) */}
+            <div className="viewport" data-studio-viewport tabIndex={-1} aria-hidden="true">
+              <div className="site">
+                <MediaImage media={site.media} alt="" sizes="(max-width: 900px) 90vw, 700px" />
+                <div className="sn">
+                  <b>{site.title}</b>
+                  {meta.nav && <span>{meta.nav}</span>}
+                </div>
+                <div className="hl">
+                  <span>{site.hook}</span>
+                  {site.description && <small>{site.description}</small>}
+                </div>
               </div>
-              <div className="hl">
-                <span>{site.hook}</span>
-                {site.description && <small>{site.description}</small>}
+              {!!meta.tours?.length && (
+                <div className="tours">
+                  {meta.tours.slice(0, 3).map((t) => (
+                    <div className="tour" key={t.name}>
+                      <b>{t.name}</b>
+                      <span>{t.detail}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <div className="site-more">
+                <h3>Stays and moments</h3>
+                <div className="site-strip">
+                  {["20% 60%", "55% 40%", "85% 70%"].map((pos) => (
+                    <span key={pos}>
+                      <MediaImage media={site.media} alt="" sizes="200px" style={{ objectPosition: pos }} />
+                    </span>
+                  ))}
+                </div>
               </div>
+              <div className="site-cta">
+                Plan your evening.
+                <small>Small groups · local guides · free cancellation</small>
+              </div>
+              <div className="site-foot">© {site.title}</div>
             </div>
-            {!!meta.tours?.length && (
-              <div className="tours" aria-hidden="true">
-                {meta.tours.slice(0, 3).map((t) => (
-                  <div className="tour" key={t.name}>
-                    <b>{t.name}</b>
-                    <span>{t.detail}</span>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
         )}
       </div>

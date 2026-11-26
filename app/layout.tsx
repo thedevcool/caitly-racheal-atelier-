@@ -1,6 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Inter, Nanum_Myeongjo } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { MotionRoot } from "@/components/motion/MotionRoot";
+import { Cursor } from "@/components/motion/Cursor";
+import { RouteProgress } from "@/components/motion/RouteProgress";
 import { getSettings } from "@/lib/content";
 import { db } from "@/lib/db";
 import "./globals.css";
@@ -57,6 +61,13 @@ export const viewport: Viewport = {
   ],
 };
 
+// A fixed string (no visitor or admin text), so inlining it is safe.
+const EARLY = `(function(){var d=document.documentElement;d.classList.add('js');
+if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;d.classList.add('motion');
+try{if(location.pathname.indexOf('/admin')!==0&&!sessionStorage.getItem('atelier-intro')){
+d.classList.add('intro');sessionStorage.setItem('atelier-intro','1');
+addEventListener('click',function s(){var o=document.querySelector('[data-intro]');if(o)o.style.display='none';removeEventListener('click',s)});}}catch(e){}})();`;
+
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const settings = await getSettings();
   return (
@@ -65,11 +76,28 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       className={`${cormorant.variable} ${inter.variable} ${nanum.variable}`}
       suppressHydrationWarning // next-themes sets data-theme before hydration
     >
+      <head>
+        {/* Before first paint: is motion OK, and should the once-per-session intro play? */}
+        <script dangerouslySetInnerHTML={{ __html: EARLY }} />
+      </head>
       <body>
         <ThemeProvider defaultTheme={settings?.defaultTheme ?? "dark"}>
           {children}
           {/* Whole-page breathing vignette (decorative; see "Breath" in globals.css) */}
           <div className="breath-veil" aria-hidden="true" />
+          <div className="grain" aria-hidden="true" />
+          <div className="intro-overlay" aria-hidden="true" data-intro>
+            <div className="intro-name">
+              <b>Caitly Racheal</b>
+              <span lang="ko">아틀리에</span>
+              <i className="intro-line" />
+            </div>
+          </div>
+          <RouteProgress />
+          <Cursor enabled={settings?.cursorEnabled ?? true} />
+          <MotionRoot />
+          {/* Only on Vercel, where the analytics endpoint exists */}
+          {process.env.VERCEL && <Analytics />}
         </ThemeProvider>
       </body>
     </html>

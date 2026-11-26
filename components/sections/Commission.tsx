@@ -13,7 +13,10 @@ type Props = {
 export function Commission({ settings, image, services }: Props) {
   return (
     <section className="band contact" id="commission" aria-labelledby="commission-title">
-      <MediaImage media={image} alt="" className="contact-img" fill sizes="100vw" />
+      {/* The silk drifts behind the frosted card; the image itself breathes */}
+      <div className="contact-media" aria-hidden="true">
+        <MediaImage media={image} alt="" className="contact-img" fill sizes="100vw" />
+      </div>
       <div className="wrap">
         <div>
           <p className="label ko" lang="ko">

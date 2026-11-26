@@ -34,11 +34,18 @@ describe("emphasis()", () => {
 describe("emphasisWords()", () => {
   it("splits into words and marks the emphasised ones", () => {
     expect(emphasisWords("I give it a *face*")).toEqual([
-      { word: "I", em: false },
-      { word: "give", em: false },
-      { word: "it", em: false },
-      { word: "a", em: false },
-      { word: "face", em: true },
+      { word: "I", em: false, space: false },
+      { word: "give", em: false, space: true },
+      { word: "it", em: false, space: true },
+      { word: "a", em: false, space: true },
+      { word: "face", em: true, space: true },
     ]);
+  });
+
+  it("keeps punctuation attached to an emphasised word", () => {
+    const words = emphasisWords("a *face*, a *voice* and a *shopfront*.");
+    const rebuilt = words.map((w) => (w.space ? " " : "") + w.word).join("");
+    expect(rebuilt).toBe("a face, a voice and a shopfront.");
+    expect(words.find((w) => w.word === ",")).toEqual({ word: ",", em: false, space: false });
   });
 });

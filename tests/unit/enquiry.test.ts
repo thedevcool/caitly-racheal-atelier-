@@ -28,7 +28,9 @@ describe("contact validation", () => {
 
   it("accepts the brief's limits exactly", () => {
     expect(enquirySchema.safeParse({ ...ok, name: "Al", message: "x".repeat(10) }).success).toBe(true);
-    expect(enquirySchema.safeParse({ ...ok, name: "x".repeat(80), message: "x".repeat(4000) }).success).toBe(true);
+    expect(enquirySchema.safeParse({ ...ok, name: "x".repeat(80), message: "x".repeat(4000) }).success).toBe(
+      true,
+    );
   });
 });
 

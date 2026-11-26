@@ -11,9 +11,9 @@
   --danger: #9b2c22;
 }
 /* The site's breathing veil, cursor and grain stay out of the admin */
-.admin-root ~ .breath-veil,
-.admin-root ~ .cursor,
-.admin-root ~ .grain {
+body:has(.admin-root) .breath-veil,
+body:has(.admin-root) .grain,
+body:has(.admin-root) .intro-overlay {
   display: none;
 }
 .admin-root a {

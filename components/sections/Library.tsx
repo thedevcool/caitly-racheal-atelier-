@@ -33,7 +33,23 @@ export function Library({ room }: { room: RoomWithContent }) {
           </div>
         </div>
       </div>
-      {painting && <MediaImage media={painting.media} className="inkimg" sizes="100vw" />}
+      {painting && (
+        // Mist parallax: the painting split into far and near bands (soft CSS
+        // masks) that move at different speeds, with drifting mist between.
+        // The red seal is stamped on when the painting comes into view.
+        <div className="ink-stage inkimg" data-ink>
+          <div className="ink-layer ink-far" data-ink-far>
+            <MediaImage media={painting.media} fill sizes="100vw" />
+          </div>
+          <div className="ink-layer ink-near" data-ink-near aria-hidden="true">
+            <MediaImage media={painting.media} alt="" fill sizes="100vw" />
+          </div>
+          <div className="ink-mist" data-ink-mist aria-hidden="true" />
+          <span className="seal is-waiting" data-seal aria-hidden="true">
+            美
+          </span>
+        </div>
+      )}
     </section>
   );
 }
