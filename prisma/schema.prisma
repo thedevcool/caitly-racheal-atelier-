@@ -1,0 +1,148 @@
+// Caitly Racheal Atelier: content model.
+// Follows the build brief (section 6). Additions are marked "added:" and exist so
+// that every piece of copy in the approved design is editable from /admin.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model SiteSettings {
+  id               Int      @id @default(1)
+  heroKorean       String
+  heroHeadline     String // supports *italic* markdown for the gold-italic word
+  heroIntro        String
+  heroCtaPrimary   String   @default("Commission a piece") // added
+  heroCtaSecondary String   @default("See the work") // added
+  heroImageId      String?
+  statement        String
+  contactKorean    String   @default("함께 만들어요 · let’s make something") // added
+  contactHeadline  String
+  contactIntro     String
+  contactButton    String   @default("Send my brief") // added
+  contactImageId   String?
+  footerTagline    String   @default("아름다움은 팔린다 — beauty sells") // added
+  footerNote       String? // added: small print under the footer
+  displayEmail     String?
+  notifyEmail      String // where enquiry notifications go (her own inbox)
+  instagram        String?
+  tiktok           String?
+  etsy             String?
+  seoTitle         String
+  seoDescription   String
+  ogImageId        String?
+  cursorEnabled    Boolean  @default(true)
+  defaultTheme     String   @default("dark") // added: dark | light | system
+  confirmVisitor   Boolean  @default(false) // added: send visitors a confirmation email (section 7.7)
+  updatedAt        DateTime @updatedAt
+}
+
+model Room {
+  id             String    @id @default(cuid())
+  slug           String    @unique // screening | shopfront | studio | library
+  name           String
+  korean         String
+  navLabel       String // added: short label in the nav ("Video ads")
+  service        String // added: option label in the contact form
+  headline       String // supports *italic*
+  body           String
+  chips          String[]
+  ctaLabel       String
+  galleryTitle   String? // added: e.g. "The Marbled Collection"
+  galleryCaption String? // added: e.g. "Printable wall art · three colourways"
+  theme          String // dark | wall | dusk | paper
+  order          Int
+  visible        Boolean   @default(true)
+  works          Work[]
+  packages       Package[]
+}
+
+model Work {
+  id            String    @id @default(cuid())
+  roomId        String
+  room          Room      @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  title         String
+  slug          String    @unique
+  category      String? // Beauty, Fashion, Travel, Product, Printable…
+  hook          String? // ad hook line shown as a caption on reels
+  client        String?
+  description   String?
+  mediaType     MediaType
+  mediaId       String
+  posterId      String? // still image for videos
+  externalUrl   String?
+  meta          Json? // added: mockup details, e.g. the Studio browser's tour cards
+  featured      Boolean   @default(false)
+  isPlaceholder Boolean   @default(false)
+  showCaseStudy Boolean   @default(false)
+  order         Int
+  visible       Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+
+  @@index([roomId, order])
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+}
+
+model Media {
+  id        String    @id @default(cuid())
+  url       String
+  kind      MediaType
+  width     Int?
+  height    Int?
+  blurData  String? // tiny base64 placeholder for next/image
+  alt       String
+  bytes     Int
+  createdAt DateTime  @default(now())
+}
+
+model Package {
+  id        String   @id @default(cuid())
+  roomId    String
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  name      String
+  korean    String?
+  priceFrom String // free text, e.g. "From $250"
+  items     String[]
+  featured  Boolean  @default(false)
+  order     Int
+  visible   Boolean  @default(true)
+}
+
+model Testimonial {
+  id      String  @id @default(cuid())
+  quote   String
+  name    String
+  role    String?
+  order   Int
+  visible Boolean @default(true)
+}
+
+model Enquiry {
+  id        String        @id @default(cuid())
+  name      String
+  email     String
+  room      String
+  budget    String?
+  message   String
+  status    EnquiryStatus @default(NEW)
+  emailSent Boolean       @default(false)
+  ipHash    String?
+  createdAt DateTime      @default(now())
+
+  @@index([status, createdAt])
+}
+
+enum EnquiryStatus {
+  NEW
+  READ
+  REPLIED
+  ARCHIVED
+}
