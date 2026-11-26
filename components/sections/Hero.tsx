@@ -14,7 +14,10 @@ export function Hero({ settings, image, rooms }: Props) {
   return (
     <header className="hero" id="top">
       {/* LCP element: priority + blur placeholder */}
-      <MediaImage media={image} className="hero-img" fill priority sizes="100vw" quality={80} />
+      {/* The wrapper breathes; the image inside keeps its slow Ken Burns drift. */}
+      <div className="hero-media">
+        <MediaImage media={image} className="hero-img" fill priority sizes="100vw" quality={80} />
+      </div>
       <Nav rooms={rooms} />
       <div className="in wrap">
         <p className="hero-ko ko" lang="ko">

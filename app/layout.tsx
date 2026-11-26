@@ -66,7 +66,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       suppressHydrationWarning // next-themes sets data-theme before hydration
     >
       <body>
-        <ThemeProvider defaultTheme={settings?.defaultTheme ?? "dark"}>{children}</ThemeProvider>
+        <ThemeProvider defaultTheme={settings?.defaultTheme ?? "dark"}>
+          {children}
+          {/* Whole-page breathing vignette (decorative; see "Breath" in globals.css) */}
+          <div className="breath-veil" aria-hidden="true" />
+        </ThemeProvider>
       </body>
     </html>
   );

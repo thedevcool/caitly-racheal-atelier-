@@ -280,6 +280,10 @@ h2 {
   align-items: center;
   gap: 24px;
 }
+.nav-buttons {
+  display: flex;
+  gap: 10px;
+}
 .links {
   display: flex;
   flex-wrap: wrap;
@@ -294,7 +298,8 @@ h2 {
   opacity: 1;
   color: var(--accent);
 }
-.theme-toggle {
+.theme-toggle,
+.breath-toggle {
   display: grid;
   place-items: center;
   width: 44px;
@@ -310,10 +315,12 @@ h2 {
     transform 0.3s ease,
     border-color 0.3s ease;
 }
-.theme-toggle:hover {
+.theme-toggle:hover,
+.breath-toggle:hover {
   border-color: var(--accent);
 }
-.theme-toggle:active {
+.theme-toggle:active,
+.breath-toggle:active {
   transform: scale(0.94);
 }
 
@@ -329,7 +336,12 @@ h2 {
   background: var(--bg);
   color: var(--ink);
 }
-.hero > .hero-img {
+.hero-media {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.hero-media .hero-img {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -708,6 +720,7 @@ h2 {
 /* Library */
 .band.paper {
   padding-bottom: 0;
+  overflow: hidden; /* the breathing ink-wash never spills into the next band */
 }
 .inkimg {
   width: 100%;
@@ -905,6 +918,98 @@ h2 {
 }
 
 /* ==========================================================================
+   Breath: "숨을 불어넣다 · to breathe life into", made literal.
+   One rhythm for the whole page: ~4s inhale, ~6s exhale, like a resting breath.
+   The artwork and the hero headline swell and settle together, and a soft
+   vignette over the whole viewport opens on the inhale and closes on the
+   exhale. Every element shares the same duration and starts on first paint,
+   so they stay in step. Only transform and opacity animate (compositor-only,
+   no layout or repaint), so it stays smooth on mid-range phones.
+   ========================================================================== */
+:root {
+  --breath-dur: 10s;
+  /* Sine-like ease, applied to each half: inhale 0→40%, exhale 40%→100% */
+  --breath-ease: cubic-bezier(0.37, 0, 0.63, 1);
+}
+@keyframes breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(var(--breath-scale, 1.02));
+  }
+}
+@keyframes breathe-veil {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  40% {
+    opacity: 0.35;
+    transform: scale(1.12);
+  }
+}
+.hero-media,
+.hero h1,
+.screen > img,
+.screen > video,
+.frame,
+.site > img,
+.inkimg,
+.contact > .contact-img {
+  animation: breathe var(--breath-dur) var(--breath-ease) infinite;
+}
+.hero-media {
+  --breath-scale: 1.025;
+}
+.hero h1 {
+  --breath-scale: 1.012;
+  transform-origin: 0 100%; /* swells up and out from its baseline */
+}
+.screen > img,
+.screen > video {
+  --breath-scale: 1.04;
+}
+.frame {
+  --breath-scale: 1.015;
+  transform-origin: 50% 0; /* hung from the top, like a frame on a nail */
+}
+.site > img {
+  --breath-scale: 1.03;
+}
+.inkimg {
+  --breath-scale: 1.02;
+  transform-origin: 50% 100%;
+}
+.contact > .contact-img {
+  --breath-scale: 1.03;
+}
+/* The whole-page veil: a soft edge vignette in the theme's own ink or ivory. */
+.breath-veil {
+  position: fixed;
+  inset: -8%;
+  z-index: 4;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 58%, rgb(var(--scrim) / 0.3) 100%);
+  animation: breathe-veil var(--breath-dur) var(--breath-ease) infinite;
+}
+/* Pause control (WCAG 2.2.2): stops the breath and the hero drift. */
+html[data-motion="paused"] .breath-veil,
+html[data-motion="paused"] .hero-media,
+html[data-motion="paused"] .hero-img,
+html[data-motion="paused"] .hero h1,
+html[data-motion="paused"] .screen > img,
+html[data-motion="paused"] .screen > video,
+html[data-motion="paused"] .frame,
+html[data-motion="paused"] .site > img,
+html[data-motion="paused"] .inkimg,
+html[data-motion="paused"] .contact > .contact-img {
+  animation-play-state: paused;
+}
+
+/* ==========================================================================
    Responsive (breakpoints match the reference)
    ========================================================================== */
 @media (max-width: 900px) {
@@ -968,11 +1073,25 @@ h2 {
   html {
     scroll-behavior: auto;
   }
-  .hero > .hero-img {
+  .hero-media .hero-img {
     animation: none;
   }
   .btn,
   body {
     transition: none;
+  }
+  .hero-media,
+  .hero h1,
+  .screen > img,
+  .screen > video,
+  .frame,
+  .site > img,
+  .inkimg,
+  .contact > .contact-img {
+    animation: none;
+  }
+  .breath-veil,
+  .breath-toggle {
+    display: none;
   }
 }

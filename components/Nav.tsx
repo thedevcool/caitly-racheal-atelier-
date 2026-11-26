@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ThemeToggle } from "./ThemeToggle";
+import { BreathToggle } from "./BreathToggle";
 
 type NavRoom = { slug: string; navLabel: string };
 
@@ -22,7 +23,10 @@ export function Nav({ rooms }: { rooms: NavRoom[] }) {
           ))}
           <Link href="/#commission">Commission</Link>
         </div>
-        <ThemeToggle />
+        <div className="nav-buttons">
+          <BreathToggle />
+          <ThemeToggle />
+        </div>
       </div>
     </nav>
   );
