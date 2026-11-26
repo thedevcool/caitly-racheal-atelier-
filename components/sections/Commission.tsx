@@ -22,7 +22,11 @@ export function Commission({ settings, image, services }: Props) {
           <h2 id="commission-title">{emphasis(settings.contactHeadline)}</h2>
           <p className="lede">{settings.contactIntro}</p>
         </div>
-        <CommissionForm services={services} buttonLabel={settings.contactButton} />
+        <CommissionForm
+          services={services}
+          buttonLabel={settings.contactButton}
+          turnstileSiteKey={process.env.TURNSTILE_SECRET_KEY ? process.env.TURNSTILE_SITE_KEY : undefined}
+        />
       </div>
     </section>
   );

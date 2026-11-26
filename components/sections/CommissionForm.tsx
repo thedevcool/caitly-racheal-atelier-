@@ -1,113 +1,194 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import Script from "next/script";
+import { useActionState, useEffect, useRef, useState, type FormEvent } from "react";
+import { getFormToken, submitEnquiry, type EnquiryState } from "@/app/actions/enquiry";
+import { quickCheck, type FieldErrors } from "@/lib/rules";
+import { GoldBurst } from "./GoldBurst";
 
-type Props = { services: { slug: string; service: string }[]; buttonLabel: string };
+type Props = {
+  services: { slug: string; service: string }[];
+  buttonLabel: string;
+  turnstileSiteKey?: string;
+};
 
 /**
- * Phase 1: validates in the browser and shows the thank-you state, like the
- * approved preview. Phase 3 swaps the submit handler for the Server Action
- * (Zod, honeypot, fill-time, rate limit, save, email).
+ * The commission form. Validates instantly in the browser with the same Zod
+ * schema the server uses, then submits to the Server Action. Errors shake the
+ * field and are announced; success turns the card to the thank-you side.
  */
-export function CommissionForm({ services, buttonLabel }: Props) {
-  const [sent, setSent] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
+export function CommissionForm({ services, buttonLabel, turnstileSiteKey }: Props) {
+  const [state, action, pending] = useActionState<EnquiryState, FormData>(submitEnquiry, { status: "idle" });
+  const [token, setToken] = useState("");
+  const [clientErrors, setClientErrors] = useState<FieldErrors>({});
+  const [attempt, setAttempt] = useState(0); // re-triggers the shake
+  const [serverRound, setServerRound] = useState(0); // remounts fields with the server's echoed values
+  const formRef = useRef<HTMLFormElement>(null);
+  const thanksRef = useRef<HTMLDivElement>(null);
+  const sent = state.status === "sent";
+
+  useEffect(() => {
+    getFormToken()
+      .then(setToken)
+      .catch(() => {});
+  }, []);
+
+  const serverErrors = state.status === "error" ? (state.errors ?? {}) : {};
+  const errors: FieldErrors = { ...serverErrors, ...clientErrors };
+  const values = state.status === "error" ? (state.values ?? {}) : {};
+
+  useEffect(() => {
+    if (state.status === "error") {
+      setServerRound((n) => n + 1);
+      setAttempt((n) => n + 1);
+    }
+    if (sent) {
+      navigator.vibrate?.(10);
+      thanksRef.current?.focus();
+    }
+  }, [state, sent]);
+
+  // Move focus to the first problem so keyboard and screen reader users land on it
+  useEffect(() => {
+    const first = Object.keys(errors)[0];
+    if (first) formRef.current?.querySelector<HTMLElement>(`[name="${first}"]`)?.focus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [attempt]);
 
   function onSubmit(e: FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const data = new FormData(e.currentTarget);
-    const next: Record<string, string> = {};
-    const name = String(data.get("name") ?? "").trim();
-    const email = String(data.get("email") ?? "").trim();
-    const message = String(data.get("message") ?? "").trim();
-    if (name.length < 2) next.name = "Please tell me your name.";
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) next.email = "That email doesn’t look quite right.";
-    if (message.length < 10) next.message = "A sentence or two about the piece, please.";
-    setErrors(next);
-    if (Object.keys(next).length) {
-      const first = e.currentTarget.querySelector<HTMLElement>(`[name="${Object.keys(next)[0]}"]`);
-      first?.focus();
+    const found = quickCheck(Object.fromEntries(new FormData(e.currentTarget)));
+    if (Object.keys(found).length) {
+      e.preventDefault();
+      setClientErrors(found);
+      setAttempt((n) => n + 1);
       return;
     }
-    setSent(true);
+    setClientErrors({});
   }
 
-  const err = (k: string) =>
-    errors[k] ? (
-      <p className="error" id={`${k}-error`}>
-        {errors[k]}
+  const field = (name: keyof FieldErrors) => ({
+    name,
+    "aria-invalid": !!errors[name] || undefined,
+    "aria-describedby": errors[name] ? `${name}-error` : undefined,
+    onInput: () => errors[name] && setClientErrors((c) => ({ ...c, [name]: undefined })),
+  });
+  const err = (name: keyof FieldErrors) =>
+    errors[name] ? (
+      <p className="error" id={`${name}-error`}>
+        {errors[name]}
       </p>
     ) : null;
+  const shake = (name: keyof FieldErrors) => (errors[name] ? `field shake-${attempt % 2}` : "field");
 
   return (
-    <form className="brief" onSubmit={onSubmit} noValidate aria-label="Commission enquiry">
-      {sent ? (
-        <div role="status" style={{ padding: "28px 0" }}>
-          <p className="serif" style={{ fontSize: 36, lineHeight: 1.1, margin: "0 0 10px" }}>
-            <span lang="ko">감사합니다.</span> Your brief is ready.
-          </p>
-          <p style={{ margin: 0, color: "var(--muted)" }}>
-            This preview doesn’t send messages yet. On the live site this form will go straight to Caitly’s
-            inbox.
-          </p>
-        </div>
-      ) : (
+    <div className={sent ? "brief-card is-sent" : "brief-card"}>
+      <form
+        ref={formRef}
+        className="brief brief-front"
+        action={action}
+        onSubmit={onSubmit}
+        noValidate
+        aria-label="Commission enquiry"
+        aria-hidden={sent || undefined}
+        inert={sent || undefined}
+        key={`round-${serverRound}`}
+      >
         <div className="fields">
-          <label>
-            Your name
+          <div className={shake("name")}>
             <input
-              name="name"
+              id="f-name"
+              placeholder=" "
               autoComplete="name"
               required
-              aria-invalid={!!errors.name}
-              aria-describedby={errors.name ? "name-error" : undefined}
+              defaultValue={values.name}
+              {...field("name")}
             />
+            <label htmlFor="f-name">Your name</label>
+            <span className="underline" aria-hidden="true" />
             {err("name")}
-          </label>
-          <label>
-            Email
+          </div>
+          <div className={shake("email")}>
             <input
-              name="email"
+              id="f-email"
               type="email"
+              placeholder=" "
               autoComplete="email"
+              inputMode="email"
               required
-              aria-invalid={!!errors.email}
-              aria-describedby={errors.email ? "email-error" : undefined}
+              defaultValue={values.email}
+              {...field("email")}
             />
+            <label htmlFor="f-email">Email</label>
+            <span className="underline" aria-hidden="true" />
             {err("email")}
-          </label>
-          <label>
-            What do you need?
-            <select name="room" defaultValue={services[0]?.slug}>
+          </div>
+          <div className={`${shake("room")} is-select`}>
+            <select id="f-room" defaultValue={values.room || services[0]?.slug} {...field("room")}>
               {services.map((s) => (
                 <option key={s.slug} value={s.slug}>
                   {s.service}
                 </option>
               ))}
             </select>
-          </label>
-          <label>
-            Tell me about the piece
+            <label htmlFor="f-room">What do you need?</label>
+            <span className="underline" aria-hidden="true" />
+            {err("room")}
+          </div>
+          <div className={shake("message")}>
             <textarea
-              name="message"
+              id="f-message"
               placeholder="What are you making, who is it for, and when do you need it?"
-              aria-invalid={!!errors.message}
-              aria-describedby={errors.message ? "message-error" : undefined}
+              defaultValue={values.message}
+              {...field("message")}
             />
+            <label htmlFor="f-message">Tell me about the piece</label>
+            <span className="underline" aria-hidden="true" />
             {err("message")}
-          </label>
-          {/* Honeypot: hidden from people, tempting to bots. Checked server-side in phase 3. */}
+          </div>
+
+          {/* Honeypot: hidden from people, tempting to bots */}
           <div className="hp" aria-hidden="true">
             <label>
               Leave this empty
               <input name="website" tabIndex={-1} autoComplete="off" />
             </label>
           </div>
-          <button className="btn gold" type="submit">
-            {buttonLabel}
+          <input type="hidden" name="t" value={token} />
+
+          {turnstileSiteKey && (
+            <>
+              <Script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer />
+              <div className="cf-turnstile" data-sitekey={turnstileSiteKey} data-theme="auto" />
+            </>
+          )}
+
+          {state.status === "error" && state.message && (
+            <p className="form-message" role="alert">
+              {state.message}
+            </p>
+          )}
+          <button
+            className={pending ? "btn gold is-sending" : "btn gold"}
+            type="submit"
+            disabled={pending || !token}
+          >
+            {pending ? "Sending…" : buttonLabel}
           </button>
         </div>
-      )}
-    </form>
+      </form>
+
+      <div className="brief brief-back" role="status" tabIndex={-1} ref={thanksRef} aria-hidden={!sent}>
+        <GoldBurst fire={sent} />
+        {sent && (
+          <>
+            <p className="thanks-ko ko" lang="ko">
+              감사합니다
+            </p>
+            <p className="thanks-title serif">Your brief is on its way.</p>
+            <p className="thanks-body">I reply within two working days with ideas and next steps.</p>
+          </>
+        )}
+      </div>
+    </div>
   );
 }

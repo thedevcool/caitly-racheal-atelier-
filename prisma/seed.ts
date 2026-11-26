@@ -18,7 +18,11 @@ const db = new PrismaClient();
 const IMG = path.join(process.cwd(), "design-reference", "img");
 
 async function upload(file: string, alt: string) {
-  const data = await readFile(path.join(IMG, file));
+  return uploadFrom(path.join(IMG, file), alt);
+}
+
+async function uploadFrom(file: string, alt: string) {
+  const data = await readFile(file);
   const stored = await storage.put(data, "jpg", "image/jpeg");
   const info = await describeImage(data);
   return db.media.create({
@@ -60,11 +64,11 @@ async function main() {
       contactImageId: wide.id,
       footerNote:
         "Artwork on this preview is studio-rendered sample art. Caitly’s own client work replaces it on the live site.",
-      notifyEmail: process.env.SMTP_USER || "you@example.com",
+      notifyEmail: "", // empty = send to SMTP_USER (her own inbox); editable in Settings
       seoTitle: "Caitly Racheal Atelier · Creative Director & Visual Storyteller",
       seoDescription:
         "Video ads that stop the scroll, Etsy products that sell themselves, and websites that feel like walking into a gallery. Commission Caitly Racheal.",
-      ogImageId: hero.id,
+      // ogImageId left empty: the generated default (silk + her name) is used until she picks one
     },
   });
 
