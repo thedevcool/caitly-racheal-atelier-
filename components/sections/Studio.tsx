@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { RoomWithContent } from "@/lib/content";
 import { emphasis } from "@/lib/emphasis";
 import { MediaImage } from "@/components/ui/MediaImage";
@@ -11,15 +12,20 @@ export function Studio({ room, flip }: { room: RoomWithContent; flip: boolean })
   const meta = (site?.meta ?? {}) as SiteMeta;
   return (
     <section className={`band tone-${room.theme}`} id={room.slug} aria-labelledby={`${room.slug}-title`}>
-      <div className={`wrap room${flip ? "flip" : ""}`}>
+      <div className={flip ? "wrap room flip" : "wrap room"}>
         <div className="text">
           <RoomTag korean={room.korean} name={room.name} />
           <h2 id={`${room.slug}-title`}>{emphasis(room.headline)}</h2>
           <p className="lede">{room.body}</p>
           <Chips items={room.chips} />
-          <a className="btn solid" href="#commission">
-            {room.ctaLabel}
-          </a>
+          <div className="room-ctas">
+            <a className="btn solid" href="#commission">
+              {room.ctaLabel}
+            </a>
+            <Link className="enter" href={`/work/${room.slug}`} data-cursor="Enter">
+              Enter the room <span aria-hidden="true">→</span>
+            </Link>
+          </div>
         </div>
         {site && (
           <div

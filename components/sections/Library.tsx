@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { RoomWithContent } from "@/lib/content";
 import { emphasis } from "@/lib/emphasis";
 import { MediaImage } from "@/components/ui/MediaImage";
@@ -21,9 +22,14 @@ export function Library({ room }: { room: RoomWithContent }) {
           <div>
             <p className="lede">{room.body}</p>
             <Chips items={room.chips} />
-            <a className="btn solid" href="#commission">
-              {room.ctaLabel}
-            </a>
+            <div className="room-ctas">
+              <a className="btn solid" href="#commission">
+                {room.ctaLabel}
+              </a>
+              <Link className="enter" href={`/work/${room.slug}`} data-cursor="Enter">
+                Enter the room <span aria-hidden="true">→</span>
+              </Link>
+            </div>
           </div>
         </div>
       </div>

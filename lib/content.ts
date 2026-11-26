@@ -63,3 +63,87 @@ export const getSettings = unstable_cache(
 );
 
 export type HomeContent = Awaited<ReturnType<typeof getHomeContent>>;
+
+/** A room's full page: its visible work, packages, and the next visible room. */
+export const getRoomPage = unstable_cache(
+  async (slug: string) => {
+    const rooms = await db.room.findMany({
+      where: { visible: true },
+      orderBy: { order: "asc" },
+      select: { id: true, slug: true, name: true, korean: true },
+    });
+    const i = rooms.findIndex((r) => r.slug === slug);
+    if (i === -1) return null;
+    const room = await db.room.findUnique({
+      where: { slug },
+      include: {
+        works: { where: { visible: true }, orderBy: { order: "asc" } },
+        packages: { where: { visible: true }, orderBy: { order: "asc" } },
+      },
+    });
+    if (!room) return null;
+    const media = await mediaMap(room.works.flatMap((w) => [w.mediaId, w.posterId]));
+    const works: WorkWithMedia[] = room.works.map((w) => ({
+      ...w,
+      media: media.get(w.mediaId) ?? null,
+      poster: w.posterId ? (media.get(w.posterId) ?? null) : null,
+    }));
+    return {
+      room: { ...room, works },
+      next: rooms.length > 1 ? rooms[(i + 1) % rooms.length] : null,
+      navRooms: await db.room.findMany({
+        where: { visible: true },
+        orderBy: { order: "asc" },
+        select: { slug: true, navLabel: true, name: true, korean: true },
+      }),
+    };
+  },
+  ["room-page"],
+  { tags: [CONTENT_TAG] },
+);
+
+/** A single piece, for its optional case-study page. */
+export const getWorkPage = unstable_cache(
+  async (roomSlug: string, slug: string) => {
+    const work = await db.work.findFirst({
+      where: { slug, visible: true, showCaseStudy: true, room: { slug: roomSlug, visible: true } },
+      include: { room: true },
+    });
+    if (!work) return null;
+    const media = await mediaMap([work.mediaId, work.posterId]);
+    const navRooms = await db.room.findMany({
+      where: { visible: true },
+      orderBy: { order: "asc" },
+      select: { slug: true, navLabel: true, name: true, korean: true },
+    });
+    return {
+      work: {
+        ...work,
+        media: media.get(work.mediaId) ?? null,
+        poster: work.posterId ? (media.get(work.posterId) ?? null) : null,
+      },
+      navRooms,
+    };
+  },
+  ["work-page"],
+  { tags: [CONTENT_TAG] },
+);
+
+export const getRoomSlugs = unstable_cache(
+  async () =>
+    (await db.room.findMany({ where: { visible: true }, select: { slug: true } })).map((r) => r.slug),
+  ["room-slugs"],
+  { tags: [CONTENT_TAG] },
+);
+
+export const getCaseStudyParams = unstable_cache(
+  async () =>
+    (
+      await db.work.findMany({
+        where: { visible: true, showCaseStudy: true, room: { visible: true } },
+        select: { slug: true, room: { select: { slug: true } } },
+      })
+    ).map((w) => ({ room: w.room.slug, slug: w.slug })),
+  ["case-study-params"],
+  { tags: [CONTENT_TAG] },
+);

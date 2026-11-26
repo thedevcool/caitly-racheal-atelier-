@@ -149,3 +149,12 @@ enum EnquiryStatus {
   REPLIED
   ARCHIVED
 }
+
+/// added: failed admin sign-ins, for rate limiting (stores a hash of the IP, never the IP)
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  ipHash    String
+  createdAt DateTime @default(now())
+
+  @@index([ipHash, createdAt])
+}
