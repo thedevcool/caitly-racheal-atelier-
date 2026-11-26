@@ -158,3 +158,10 @@ model LoginAttempt {
 
   @@index([ipHash, createdAt])
 }
+
+/// added: unsaved editor changes shown by "Preview" (draft mode). Old rows are pruned.
+model Draft {
+  id        String   @id @default(cuid())
+  data      Json
+  createdAt DateTime @default(now())
+}
