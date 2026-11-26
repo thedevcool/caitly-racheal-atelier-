@@ -14,13 +14,8 @@ export function FrameWall({ works, roomSlug }: { works: ViewWork[]; roomSlug: st
       <div className="frames">
         {works.map((w, i) => (
           <figure className="frame" key={w.id}>
-            <button
-              type="button"
-              className="frame-hit"
-              onClick={() => setOpen(i)}
-              data-cursor="View"
-              aria-label={`View ${w.title}`}
-            >
+            <button type="button" className="frame-hit" onClick={() => setOpen(i)} data-cursor="View">
+              <span className="sr-only">View {w.title}: </span>
               {w.media && (
                 <Image
                   src={w.media.url}

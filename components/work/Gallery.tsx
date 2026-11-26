@@ -49,8 +49,8 @@ export function Gallery({ works, roomSlug, reels }: Props) {
                 className="tile"
                 onClick={() => setOpen(i)}
                 data-cursor={reels ? "Play" : "View"}
-                aria-label={`${reels ? "Play" : "View"} ${w.title}`}
               >
+                <span className="sr-only">{reels ? "Play" : "View"} </span>
                 <span className="tile-media">
                   {reels && w.mediaType === "VIDEO" && w.media ? (
                     <InViewVideo src={w.media.url} poster={w.poster?.url} aria-hidden="true" />

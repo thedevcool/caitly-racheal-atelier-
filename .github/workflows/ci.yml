@@ -49,6 +49,11 @@ jobs:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/atelier
       DATABASE_URL_UNPOOLED: postgresql://postgres:postgres@localhost:5432/atelier
       NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      # Throwaway CI-only admin login (the hash is of E2E_ADMIN_PASSWORD below)
+      AUTH_SECRET: ci-only-secret-not-used-anywhere-else
+      ADMIN_EMAIL: admin@example.test
+      ADMIN_PASSWORD_HASH: JDJiJDEyJDczWlY4bHRIb0tjbjV3dnJ0dGN3OGVCQ1BlT1V1eXdseEc2WE1wTWdSMXRnRVIuUGtGdjIy
+      E2E_ADMIN_PASSWORD: ci-test-password-123
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4

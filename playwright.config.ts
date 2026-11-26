@@ -1,10 +1,15 @@
 import { defineConfig, devices } from "@playwright/test";
+import { loadEnvConfig } from "@next/env";
+
+// Same env files Next uses (.env locally; CI sets real env vars)
+loadEnvConfig(process.cwd());
 
 const PORT = Number(process.env.PORT ?? 3000);
 
 /** Smoke tests against the production build (`pnpm build` first). */
 export default defineConfig({
   testDir: "tests/e2e",
+  globalSetup: "./tests/e2e/global-setup.ts",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,

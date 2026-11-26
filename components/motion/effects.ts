@@ -43,79 +43,82 @@ function splitWords(el: HTMLElement) {
   return el.querySelectorAll<HTMLElement>(".rw-i");
 }
 
-/** Headings rise line by line from a mask; body fades after; chips stagger 60ms. */
-export function reveals({ gsap }: Ctx) {
+/**
+ * Headings rise line by line from a mask; body fades after; chips stagger 60ms.
+ * Performance: every position is read in one pass, then every style is
+ * written in one pass (no layout thrashing), and headings are only split into
+ * words when they are about to enter the screen.
+ */
+export function reveals({ gsap, ScrollTrigger }: Ctx) {
+  const skip = (el: Element) => !!el.closest(".hero, dialog, .statement, .brief-card");
   const calm = (el: Element) => !!el.closest(".paper, .tone-paper");
+  const q = (sel: string) => [...document.querySelectorAll<HTMLElement>(sel)].filter((el) => !skip(el));
 
-  document.querySelectorAll<HTMLElement>("main h2:not(.sr-only), .room-title").forEach((h) => {
-    if (h.closest(".hero, dialog, .statement, .brief-card") || !below(h)) return;
-    if (calm(h)) {
-      gsap.from(h, {
-        opacity: 0,
-        duration: 1.6,
-        ease: "sine.out",
-        scrollTrigger: { trigger: h, start: "top 88%", once: true },
-      });
-      return;
-    }
-    const words = [...splitWords(h)];
-    // group words into lines by their vertical position, so each line rises together
-    const tops = [...new Set(words.map((w) => Math.round((w.parentElement as HTMLElement).offsetTop)))].sort(
-      (a, b) => a - b,
-    );
-    words.forEach((w) => {
-      const line = tops.indexOf(Math.round((w.parentElement as HTMLElement).offsetTop));
-      gsap.from(w, {
-        yPercent: 110,
-        duration: 1.15,
-        ease: SILK,
-        delay: line * 0.12,
-        scrollTrigger: { trigger: h, start: "top 88%", once: true },
-      });
-    });
+  const headings = q("main h2:not(.sr-only), .room-title");
+  const fades = q(
+    ".roomtag, .lede, .room-ctas, .tag, .crumbs, .room-headline, .next-room, .filters, .label, .packages .package, .quotes blockquote, .case-media, .gallery > li",
+  );
+  const chipLists = q(".chips");
+
+  // READ: one layout pass for everything
+  const fold = window.innerHeight * 0.92;
+  const isBelow = new Map<HTMLElement, boolean>();
+  for (const el of [...headings, ...fades, ...chipLists])
+    isBelow.set(el, el.getBoundingClientRect().top > fold);
+  const later = (els: HTMLElement[]) => els.filter((el) => isBelow.get(el));
+
+  // WRITE: hide what's below the fold (content on screen at load is never hidden)
+  const hHeads = later(headings);
+  const hFades = later(fades);
+  const hChips = later(chipLists);
+  gsap.set(hHeads, { opacity: 0 });
+  gsap.set(
+    hFades.filter((el) => !calm(el)),
+    { opacity: 0, y: 18 },
+  );
+  gsap.set(hFades.filter(calm), { opacity: 0 });
+  hChips.forEach((l) => gsap.set(l.children, { opacity: 0, y: 10 }));
+
+  hHeads.forEach((h) =>
+    ScrollTrigger.create({
+      trigger: h,
+      start: "top 92%",
+      once: true,
+      onEnter: () => {
+        if (calm(h)) return void gsap.to(h, { opacity: 1, duration: 1.6, ease: "sine.out" });
+        const words = [...splitWords(h)];
+        // group words into lines (one read), so each line rises together
+        const tops = words.map((w) => Math.round((w.parentElement as HTMLElement).offsetTop));
+        const lines = [...new Set(tops)].sort((a, b) => a - b);
+        gsap.set(h, { opacity: 1 });
+        words.forEach((w, i) =>
+          gsap.from(w, { yPercent: 110, duration: 1.15, ease: SILK, delay: lines.indexOf(tops[i]) * 0.12 }),
+        );
+      },
+    }),
+  );
+
+  ScrollTrigger.batch(hFades, {
+    start: "top 92%",
+    once: true,
+    onEnter: (batch) => {
+      const slow = batch.filter(calm);
+      const rest = batch.filter((el) => !calm(el));
+      if (rest.length)
+        gsap.to(rest, { opacity: 1, y: 0, duration: 1, ease: SILK, stagger: 0.08, delay: 0.2 });
+      if (slow.length) gsap.to(slow, { opacity: 1, duration: 1.6, ease: "sine.out" });
+    },
   });
 
-  const fades =
-    ".roomtag, .lede, .room-ctas, .tag, .crumbs, .room-headline, .next-room, .filters, .label, .packages .package, .quotes blockquote, .case-media";
-  document.querySelectorAll<HTMLElement>(fades).forEach((el) => {
-    if (el.closest(".hero, dialog, .brief-card") || !below(el)) return;
-    const slow = calm(el);
-    gsap.from(el, {
-      opacity: 0,
-      y: slow ? 0 : 18,
-      duration: slow ? 1.6 : 1,
-      delay: slow ? 0 : 0.25,
-      ease: slow ? "sine.out" : SILK,
-      scrollTrigger: { trigger: el, start: "top 90%", once: true },
-    });
-  });
-
-  document.querySelectorAll<HTMLElement>(".chips").forEach((list) => {
-    if (!below(list)) return;
-    gsap.from(list.children, {
-      opacity: 0,
-      y: 10,
-      duration: 0.8,
-      ease: SILK,
-      stagger: 0.06,
-      delay: 0.35,
-      scrollTrigger: { trigger: list, start: "top 92%", once: true },
-    });
-  });
-
-  document.querySelectorAll<HTMLElement>(".gallery").forEach((g) => {
-    gsap.utils.toArray<HTMLElement>(g.children).forEach((li, i) => {
-      if (!below(li)) return;
-      gsap.from(li, {
-        opacity: 0,
-        y: 30,
-        duration: 1,
-        ease: SILK,
-        delay: (i % 3) * 0.08,
-        scrollTrigger: { trigger: li, start: "top 94%", once: true },
-      });
-    });
-  });
+  hChips.forEach((list) =>
+    ScrollTrigger.create({
+      trigger: list,
+      start: "top 94%",
+      once: true,
+      onEnter: () =>
+        gsap.to(list.children, { opacity: 1, y: 0, duration: 0.8, ease: SILK, stagger: 0.06, delay: 0.3 }),
+    }),
+  );
 }
 
 /** Hero: parallax at 0.6× scroll, pointer shift (12px max), tilt on phones after a gesture. */

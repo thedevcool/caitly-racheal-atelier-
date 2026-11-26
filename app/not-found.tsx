@@ -12,6 +12,7 @@ export default async function NotFound() {
     .catch(() => null);
   return (
     <main
+      id="main"
       className="band"
       style={{ minHeight: "100vh", display: "grid", placeItems: "center", textAlign: "center" }}
     >

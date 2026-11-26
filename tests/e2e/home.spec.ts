@@ -1,12 +1,5 @@
-import { expect, test, type Page } from "@playwright/test";
-
-/** Fail any test that logs a console error or throws on the page. */
-function watchErrors(page: Page) {
-  const errors: string[] = [];
-  page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
-  page.on("pageerror", (e) => errors.push(e.message));
-  return errors;
-}
+import { expect, test } from "./fixtures";
+import { watchErrors } from "./helpers";
 
 test("home renders every section from the database", async ({ page }) => {
   const errors = watchErrors(page);
@@ -91,25 +84,42 @@ test("reduced motion turns the breathing off", async ({ browser }) => {
   await context.close();
 });
 
-test("commission form explains errors, then thanks the visitor", async ({ page }) => {
+test("commission form explains errors, then sends and thanks the visitor", async ({ page }, info) => {
   await page.goto("/#commission");
   const form = page.getByRole("form", { name: "Commission enquiry" });
+  const send = form.getByRole("button", { name: "Send my brief" });
+  await expect(send).toBeEnabled(); // the signed fill-time token has arrived
 
-  await form.getByRole("button", { name: "Send my brief" }).click();
+  await send.click();
   const name = form.getByRole("textbox", { name: "Your name" });
   await expect(name).toHaveAttribute("aria-invalid", "true");
   await expect(form.getByText("Please tell me your name.")).toBeVisible();
   await expect(name).toBeFocused();
 
   await name.fill("Test Visitor");
-  await form.getByRole("textbox", { name: "Email" }).fill("visitor@example.com");
+  await form.getByRole("textbox", { name: "Email" }).fill(`visitor-${info.project.name}@example.test`);
   await form.getByRole("combobox", { name: "What do you need?" }).selectOption({ index: 2 });
   await form
     .getByRole("textbox", { name: "Tell me about the piece" })
     .fill("A short brief about my new product.");
-  await form.getByRole("button", { name: "Send my brief" }).click();
+  await page.waitForTimeout(3200); // the server rejects forms filled faster than 3s
+  await send.click();
 
-  await expect(form.getByRole("status")).toContainText("감사합니다");
+  await expect(page.locator(".brief-back")).toContainText("감사합니다", { timeout: 15_000 });
+  await expect(page.locator(".brief-back")).toContainText("two working days");
+});
+
+test("a form filled in under three seconds is refused, and keeps what was typed", async ({ page }) => {
+  await page.goto("/#commission");
+  const form = page.getByRole("form", { name: "Commission enquiry" });
+  await expect(form.getByRole("button", { name: "Send my brief" })).toBeEnabled();
+  await form.getByRole("textbox", { name: "Your name" }).fill("Speedy");
+  await form.getByRole("textbox", { name: "Email" }).fill("speedy@example.test");
+  await form.getByRole("textbox", { name: "Tell me about the piece" }).fill("Filled in a hurry by a bot.");
+  // give the token just under the minimum age
+  await form.getByRole("button", { name: "Send my brief" }).click();
+  await expect(form.getByRole("alert")).toContainText("take a moment");
+  await expect(form.getByRole("textbox", { name: "Your name" })).toHaveValue("Speedy");
 });
 
 test("unknown pages show the on-brand 404", async ({ page }) => {
@@ -119,4 +129,16 @@ test("unknown pages show the on-brand 404", async ({ page }) => {
   await expect(page.getByText("이 방은 비어 있어요.")).toBeVisible();
   await page.getByRole("link", { name: "Return to the atelier" }).click();
   await expect(page).toHaveURL("/");
+});
+
+test("the intro plays once per session, then never again", async ({ browser }) => {
+  const context = await browser.newContext();
+  const page = await context.newPage(); // no fixture: a true first visit
+  await page.goto("/");
+  await expect(page.locator("html")).toHaveClass(/\bintro\b/);
+  await expect(page.locator("[data-intro]")).toBeVisible();
+  await expect(page.locator("[data-intro]")).toBeHidden({ timeout: 4000 });
+  await page.goto("/privacy");
+  await expect(page.locator("html")).not.toHaveClass(/\bintro\b/);
+  await context.close();
 });

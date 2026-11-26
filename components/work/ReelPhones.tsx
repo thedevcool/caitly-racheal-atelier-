@@ -51,13 +51,9 @@ export function ReelPhones({ works }: { works: ViewWork[] }) {
           const still = w.poster ?? w.media;
           return (
             <figure className={i === active ? "phone is-active" : "phone"} key={w.id}>
-              <button
-                type="button"
-                className="phone-hit"
-                onClick={() => setOpen(i)}
-                data-cursor="Play"
-                aria-label={`Play ${w.title}${w.hook ? `: ${w.hook}` : ""}`}
-              >
+              <button type="button" className="phone-hit" onClick={() => setOpen(i)} data-cursor="Play">
+                {/* Name comes from the visible caption (WCAG 2.5.3), with "Play" for context */}
+                <span className="sr-only">Play </span>
                 <span className="notch" />
                 <span className="screen">
                   {w.mediaType === "VIDEO" && w.media ? (

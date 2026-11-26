@@ -21,6 +21,16 @@ export function MotionRoot() {
   useEffect(() => {
     if (admin || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     libs.current ??= (async () => {
+      // Wait until the page has loaded and the browser is idle, so the motion
+      // libraries never compete with the hero image or first interaction.
+      await new Promise<void>((resolve) => {
+        const idle = () =>
+          "requestIdleCallback" in window
+            ? requestIdleCallback(() => resolve(), { timeout: 1500 })
+            : setTimeout(resolve, 300);
+        if (document.readyState === "complete") idle();
+        else addEventListener("load", idle, { once: true });
+      });
       const [{ gsap }, { ScrollTrigger }, { CustomEase }, { default: LenisClass }] = await Promise.all([
         import("gsap"),
         import("gsap/ScrollTrigger"),
@@ -49,17 +59,21 @@ export function MotionRoot() {
     if (admin || matchMedia("(prefers-reduced-motion: reduce)").matches || !libs.current) return;
     let cancelled = false;
     let revert = () => {};
-    libs.current.then(({ gsap, ScrollTrigger }) => {
+    libs.current.then(async ({ gsap, ScrollTrigger }) => {
       if (cancelled) return;
       const loops: GSAPTween[] = [];
       const ctx: Ctx = { gsap, ScrollTrigger, fine: matchMedia("(pointer: fine)").matches, loops };
       const cleanups: (() => void)[] = [];
-      const g = gsap.context(() => {
-        for (const fx of ALL) {
+      const g = gsap.context(() => {});
+      // One effect per task, yielding in between, so setup never blocks input
+      for (const fx of ALL) {
+        await new Promise((r) => setTimeout(r, 0));
+        if (cancelled) break;
+        g.add(() => {
           const off = fx(ctx);
           if (typeof off === "function") cleanups.push(off);
-        }
-      });
+        });
+      }
       // The pause button also pauses the floating loops
       const syncPause = () => {
         const paused = document.documentElement.dataset.motion === "paused";
@@ -77,6 +91,7 @@ export function MotionRoot() {
         cleanups.forEach((c) => c());
         g.revert();
       };
+      if (cancelled) revert();
     });
     return () => {
       cancelled = true;

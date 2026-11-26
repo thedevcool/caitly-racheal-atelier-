@@ -31,7 +31,7 @@ export default async function CaseStudy({ params }: Params) {
   return (
     <>
       <PageHead rooms={navRooms} />
-      <main className="band case">
+      <main id="main" className="band case">
         <article className="wrap">
           <p className="crumbs">
             <Link href="/">Atelier</Link> <span aria-hidden="true">/</span>{" "}

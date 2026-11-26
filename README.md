@@ -4,55 +4,82 @@ The personal-brand website of **Caitly Racheal**, Creative Director & Visual Sto
 four "rooms" (video ads, Etsy design, websites, research) that turns visitors into commission enquiries, with an
 admin area where Caitly edits everything herself.
 
-- **Build brief:** [`docs/BRIEF.md`](./docs/BRIEF.md) (read this before changing anything)
+- **For Caitly:** [`docs/CAITLY_GUIDE.md`](./docs/CAITLY_GUIDE.md): signing in, replacing the sample art, prices, enquiries, the Gmail app password.
+- **Build brief:** [`docs/BRIEF.md`](./docs/BRIEF.md) (read before changing anything).
 - **Approved design:** [`design-reference/index.html`](./design-reference/index.html). Match it; don't reinvent it.
 
-## Status
+## What's in it
 
-| Phase                                                                   | State   |
-| ----------------------------------------------------------------------- | ------- |
-| 1. Foundation: tokens, fonts, data model, seed, home page               | Done    |
-| Dark/light mode and the "breathing" page                                | Done    |
-| CI: lint, types, formatting, unit and browser tests                     | Done    |
-| 2. `/work/[room]` galleries, lightbox, reel viewer                      | Next    |
-| 3. Contact form: Server Action, spam protection, email via app password | Planned |
-| 4. Admin: login, editors, uploads, enquiry inbox, settings              | Planned |
-| 5. Motion and touch (Lenis, GSAP, cursor, tilt, carousels)              | Planned |
-| 6. Polish: performance, SEO, accessibility audit, Caitly's how-to guide | Planned |
+**Public site**
 
-Until phase 3 the contact form validates and shows the thank-you state but **does not send anything**.
+- Home page in the approved design: hero, statement, the four rooms (phones, framed prints, a browser mockup, the
+  ink-wash Library), packages, testimonials, the commission form and footer. Every word comes from the database.
+- `/work/[room]`: each room's gallery with category filters, a lightbox (swipe, pinch and double-tap zoom) or a
+  TikTok-style reel viewer (swipe, tap for sound, double-tap heart), its packages and a "next room" link.
+  `/work/[room]/[slug]` case studies, switched on per piece. `/privacy`, and an on-brand 404.
+- **Dark and light mode.** Dark is the approved design; light is an ivory gallery-wall version. The Shopfront,
+  Studio and Library keep their own palettes in both.
+- **The page breathes**: one shared 10-second breath (≈4s in, 6s out) across the artwork and the hero headline,
+  with a vignette that opens on the inhale. A pause button sits beside the theme toggle.
+- **Motion (brief §9):**
+  - smooth scroll (Lenis + GSAP) and a once-per-session intro
+  - route fades with a gold progress line
+  - headings that rise line by line
+  - hero parallax, pointer and tilt shift
+  - the statement's scroll-scrubbed words
+  - phones that fan in, float and tilt, frames that hang and sway, a Studio browser that scrolls itself
+  - Library mist parallax and a seal that stamps in
+  - custom cursor, magnetic buttons, film grain, a full-screen phone menu
 
-## Features so far
+  All of it is off under `prefers-reduced-motion`.
 
-- **Every word is in the database.** All copy, rooms, work, packages and settings come from Postgres (Prisma), seeded
-  with the approved reference content. Sample artwork is flagged `isPlaceholder` so the admin can list what's left
-  to replace.
-- **Dark and light mode.** Dark is the approved design; light is an ivory gallery-wall version. The Shopfront (wall),
-  Studio (dusk) and Library (paper) rooms keep their own palettes in both modes. Visitors toggle with the sun/moon
-  button; the first-visit default is the `defaultTheme` setting (`dark`, `light` or `system`).
-- **The page breathes.** One shared 10-second breath (about 4s in, 6s out): the artwork and hero headline swell and
-  settle together and a soft vignette over the whole page opens on the inhale. A pause button sits beside the theme
-  toggle and is remembered; `prefers-reduced-motion` turns it off entirely.
-- **Accessible by construction.** WCAG AA contrast for every colour pair in every tone (checked by a unit test),
-  `lang="ko"` on Korean text, labelled form errors, visible focus rings, 44px+ tap targets.
-- **Safe text rendering.** `*italic*` in headlines becomes `<em>` via React elements, never HTML strings.
+- **Commission form:**
+  - Zod validation (shared rules in the browser, no Zod shipped to the client)
+  - honeypot, a signed 3-second minimum fill time, a 5-per-hour rate limit on a hashed IP, optional Turnstile
+  - saves first, then emails Caitly's own inbox through her app password, with Reply-To set to the visitor
+  - an on-brand HTML and plain-text email
+
+**Admin (`/admin`)**
+
+- **Login:** Auth.js credentials login for one admin, rate-limited. Middleware guards every page, and every action
+  checks the session again.
+- **Dashboard:** new enquiries, a "Retry sending" for failed notifications, a placeholder checklist with Replace
+  buttons, and a setup checklist.
+- **Editors:** words, rooms, work, packages, testimonials and settings. Inline validation, Preview of unsaved
+  changes (draft mode), drag or arrow-button reordering, and changes go live on save.
+- **Uploads:**
+  - straight to Vercel Blob in production, up to 80 MB
+  - checked server-side by their actual bytes (no SVG, no spoofed types)
+  - blur placeholders generated, alt text required, video posters (upload one or grab a frame)
+- **Enquiry inbox:** filters, search, prefilled mailto replies, status, CSV export (guarded against
+  spreadsheet formulas), and "Send test email".
+- **Usable on a phone at 390px.**
+
+**Polish**
+
+- SEO: metadata from Settings, a generated share image (`/og`: silk + her name), `sitemap.xml`, `robots.txt`, and
+  JSON-LD `Person` + `ProfessionalService`.
+- Security headers: CSP, HSTS, X-Frame-Options, Referrer-Policy and Permissions-Policy.
+- Accessibility: skip link, landmarks, `lang="ko"` on Hangul, visible focus, AA contrast in every tone (unit-tested),
+  and axe checks in CI.
 
 ## Tech stack
 
-Next.js 15 (App Router, Server Components) · TypeScript (strict) · Tailwind CSS v4 · Prisma 6 + PostgreSQL ·
-Vercel Blob · next-themes · Zod · Vitest · Playwright. Motion, GSAP + ScrollTrigger, Lenis, Auth.js v5 and
-Nodemailer arrive in later phases. Package manager: **pnpm**. Node **20.9+** (CI uses 22).
+Next.js 15 (App Router, Server Components, Server Actions) · TypeScript · Tailwind CSS v4 tokens · Prisma 6 +
+PostgreSQL · Vercel Blob · Auth.js v5 · Nodemailer 7 · Zod · Motion libraries GSAP + Lenis · next-themes ·
+dnd-kit · Vitest · Playwright + axe. Package manager **pnpm**; Node **20.9+** (CI uses 22).
 
 ## Run it locally
 
-You need Node, pnpm and a Postgres database (a local install, Docker, or a free Neon branch).
+You need Node, pnpm and Postgres (local, Docker, or a free Neon branch).
 
 ```bash
 pnpm install
-cp .env.example .env     # then set DATABASE_URL and DATABASE_URL_UNPOOLED (same URL locally)
-pnpm db:deploy           # create the tables from prisma/migrations
-pnpm db:seed             # load the reference content and artwork
-pnpm dev                 # http://localhost:3000
+cp .env.example .env        # fill in DATABASE_URL and DATABASE_URL_UNPOOLED (same URL locally) and AUTH_SECRET
+pnpm db:deploy              # create the tables
+pnpm db:seed                # load the reference content and artwork
+pnpm admin:hash             # make ADMIN_PASSWORD_HASH; also set ADMIN_EMAIL in .env
+pnpm dev                    # http://localhost:3000 (admin at /admin)
 ```
 
 Quick local Postgres with Docker:
@@ -62,102 +89,119 @@ docker run -d --name atelier-db -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=ate
 # DATABASE_URL=postgresql://postgres:postgres@localhost:5432/atelier
 ```
 
-**Images:** without `BLOB_READ_WRITE_TOKEN`, uploads (including the seed artwork) are saved to `public/uploads/`.
-That folder is git-ignored and only works locally. Never seed a production database without the Blob token set,
-or the image URLs will point at files that don't exist on Vercel.
+Notes:
 
-**Seeding is safe:** if the site already has content the seed does nothing, so it can never overwrite Caitly's
-edits. `pnpm db:seed -- --reset` wipes and reseeds a development database (refused when `NODE_ENV=production`).
+- **Uploads without a Blob token** go to `public/uploads/` (git-ignored). `pnpm dev` serves new files straight
+  away; `pnpm start` only serves files that existed at build time. Production always uses Vercel Blob. Never seed a
+  production database without `BLOB_READ_WRITE_TOKEN`, or image URLs will point at files that don't exist.
+- **The seed is safe to re-run:** it does nothing if content exists. `pnpm db:seed -- --reset` wipes and reseeds a
+  development database (refused in production). After a reset, delete `.next/cache` so pre-rendered pages don't
+  reuse old content.
+- **Email locally:** leave the `SMTP_*` values empty and enquiries are saved without sending (the dashboard shows a
+  warning). Or point them at a real account to test.
 
 ## Environment variables
 
 See [`.env.example`](./.env.example). Never commit real values.
 
-| Variable                 | Needed from | Purpose                                                      |
-| ------------------------ | ----------- | ------------------------------------------------------------ |
-| `DATABASE_URL`           | now         | Postgres connection (the pooled URL on Vercel)               |
-| `DATABASE_URL_UNPOOLED`  | now         | Direct connection, used by migrations                        |
-| `NEXT_PUBLIC_SITE_URL`   | now         | Canonical URL for metadata, e.g. `https://caitlyracheal.com` |
-| `BLOB_READ_WRITE_TOKEN`  | production  | Vercel Blob storage for images and video                     |
-| `SMTP_*`                 | phase 3     | Caitly's email account and app password for enquiry emails   |
-| `AUTH_SECRET`, `ADMIN_*` | phase 4     | Admin login                                                  |
-| `TURNSTILE_*`            | optional    | Cloudflare Turnstile spam check on the contact form          |
+| Variable                                     | Purpose                                                                   |
+| -------------------------------------------- | ------------------------------------------------------------------------- |
+| `DATABASE_URL`                               | Postgres (the pooled URL on Vercel)                                       |
+| `DATABASE_URL_UNPOOLED`                      | Direct connection, used by migrations                                     |
+| `AUTH_SECRET`                                | Signs sessions and form tokens. `openssl rand -base64 32`                 |
+| `ADMIN_EMAIL`, `ADMIN_PASSWORD_HASH`         | The one admin login. Hash from `pnpm admin:hash` (base64, so `$` is safe) |
+| `BLOB_READ_WRITE_TOKEN`                      | Vercel Blob for images and video                                          |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`      | Defaults are Gmail: `smtp.gmail.com`, `465`, `true`                       |
+| `SMTP_USER`, `SMTP_APP_PASSWORD`             | Caitly's address and its app password (see the guide)                     |
+| `NEXT_PUBLIC_SITE_URL`                       | Canonical URL, e.g. `https://caitlyracheal.com`                           |
+| `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | Optional Cloudflare Turnstile on the contact form (both or neither)       |
 
 ## Scripts
 
-| Script                         | What it does                                                       |
-| ------------------------------ | ------------------------------------------------------------------ |
-| `pnpm dev`                     | Development server                                                 |
-| `pnpm build` / `start`         | Production build and server                                        |
-| `pnpm vercel-build`            | What Vercel runs: generate, migrate, seed (no-op if seeded), build |
-| `pnpm db:deploy`               | Apply migrations (`prisma migrate deploy`)                         |
-| `pnpm db:migrate`              | Create a new migration after editing the schema (development)      |
-| `pnpm db:seed`                 | Seed reference content (safe to re-run)                            |
-| `pnpm lint` / `typecheck`      | ESLint and `tsc --noEmit`                                          |
-| `pnpm format` / `format:check` | Prettier write / check                                             |
-| `pnpm test`                    | Unit tests (Vitest)                                                |
-| `pnpm test:e2e`                | Browser tests (Playwright) against a production build              |
+| Script                                                | What it does                                                         |
+| ----------------------------------------------------- | -------------------------------------------------------------------- |
+| `pnpm dev` / `build` / `start`                        | Next.js                                                              |
+| `pnpm vercel-build`                                   | What Vercel runs: generate, migrate, seed (no-op once seeded), build |
+| `pnpm db:deploy` / `db:migrate` / `db:seed`           | Apply migrations / create one / seed                                 |
+| `pnpm admin:hash`                                     | Make `ADMIN_PASSWORD_HASH`                                           |
+| `pnpm lint` / `typecheck` / `format` / `format:check` | Quality checks                                                       |
+| `pnpm test`                                           | Unit tests (Vitest)                                                  |
+| `pnpm test:e2e`                                       | Browser tests (Playwright) against a production build                |
 
 ## Tests and CI
 
-- **Unit (`tests/unit`):** the `*italic*` parser (including that admin-entered HTML is never rendered) and WCAG AA
-  contrast for every colour token in the dark, light, wall, dusk and paper tones, read straight from
-  `app/globals.css`.
-- **Browser (`tests/e2e`), desktop and phone:** the home page renders every section from the database with no
-  console errors; images have alt text; draft packages and testimonials stay hidden; the theme toggle switches and
-  persists; the page breathes and the pause button works and persists; reduced motion stops it; the contact form
-  explains errors and shows the thank-you state; the 404 page works.
+- **Unit (`tests/unit`, 59 tests):**
+  - the `*italic*` parser, including that admin-entered HTML never renders
+  - WCAG AA contrast for every token in all five tones
+  - browser/server validation parity
+  - the signed fill-time token
+  - email escaping and subject format
+- **Browser (`tests/e2e`, desktop + phone, 72 tests):**
+  - every page and room renders with no console errors
+  - lightbox, reel viewer, the phone menu, dark/light, the breath and its pause button, reduced motion, the intro
+  - the contact form end to end (including the 3-second rule)
+  - the admin: lockout, login, a failed save keeps edits, Preview, uploads checked by bytes, an enquiry reaching
+    the inbox, CSV
+  - axe on every page type in both themes
+  - SEO files and security headers
 
-To run the browser tests locally: `pnpm build && pnpm test:e2e` (the first time, `pnpm exec playwright install chromium`).
+  Admin tests need `ADMIN_EMAIL`, `ADMIN_PASSWORD_HASH` and `E2E_ADMIN_PASSWORD`.
 
-[GitHub Actions](./.github/workflows/ci.yml) runs on every pull request and every push to `main`:
-
-1. **Checks:** lint, typecheck, Prettier, unit tests.
-2. **E2E:** a fresh Postgres 16, then the same migrate → seed → build steps Vercel uses, then the Playwright suite.
-   On failure, the HTML report is uploaded as an artifact.
+[GitHub Actions](./.github/workflows/ci.yml) runs both on every PR and push to `main`. The E2E job uses a fresh
+Postgres and the same migrate → seed → build steps as Vercel, with a throwaway CI-only admin login.
 
 ## Deploying to Vercel
 
-1. Import the GitHub repository in Vercel (framework: Next.js; it detects pnpm from the lockfile).
-2. Add a Postgres database: **Storage → Create → Neon**, connected to all environments. This sets `DATABASE_URL`
-   and `DATABASE_URL_UNPOOLED` for you.
-3. Add **Storage → Create → Blob** and connect it. This sets `BLOB_READ_WRITE_TOKEN`.
-4. Set `NEXT_PUBLIC_SITE_URL` to the production URL.
-5. Deploy. Vercel runs `pnpm vercel-build`: it applies migrations, seeds the first time (uploading the artwork to
-   Blob), then builds. Later deploys skip the seed because content already exists.
+1. Import the GitHub repo in Vercel (Next.js and pnpm are detected).
+2. **Storage → Neon Postgres**, connected to all environments (sets `DATABASE_URL` and `DATABASE_URL_UNPOOLED`).
+3. **Storage → Blob**, connected (sets `BLOB_READ_WRITE_TOKEN`). Do this before the first deploy.
+4. **Settings → Environment Variables:** `AUTH_SECRET`, `ADMIN_EMAIL`, `ADMIN_PASSWORD_HASH`, `SMTP_USER`,
+   `SMTP_APP_PASSWORD`, `NEXT_PUBLIC_SITE_URL` (and optionally the Turnstile keys).
+5. Deploy. `pnpm vercel-build` migrates, seeds the first time (uploading the artwork to Blob) and builds.
+6. **Analytics → Enable** for privacy-friendly visit counts (no cookie banner needed).
+7. Sign in at `/admin`, then **Settings → Send test email**.
 
-Schema changes: run `pnpm db:migrate` locally, commit the new folder in `prisma/migrations/`, and the next deploy
-applies it.
+Schema changes: `pnpm db:migrate` locally, commit the new `prisma/migrations/` folder; the next deploy applies it.
+
+## Performance
+
+Measured on a production build with mobile Lighthouse (Moto G-class device, slow 4G):
+
+- **Home, with DevTools throttling:** Performance 90, Accessibility 97, Best Practices 96, SEO 100. LCP 1.9s, CLS 0.
+- **Home, Lighthouse's default simulated throttling (what PageSpeed Insights uses):** Performance about 83.
+- **Room pages:** Performance 84–86; Accessibility 100; SEO 100.
+- **What keeps the score up:**
+  - GSAP and Lenis load only after the page is idle
+  - effects set up in small tasks with batched layout reads
+  - the hero is preloaded with `fetchpriority="high"`
+  - the intro overlay is 96% opaque so the hero paints beneath it
+  - variable fonts are self-hosted
+- **The remaining lever:** the Korean font (about 135 kB of glyph files) loads with the page. Deferring it scored
+  about 85–89 but made the Korean labels swap fonts visibly, so it's left as a design decision.
+  Re-check on PageSpeed Insights after deploying, since Vercel's CDN changes the network side.
+
+Not built: the optional WebGL silk shader (brief §9, "optional, build last, behind a flag").
 
 ## Where things live
 
 ```
 app/
-  globals.css            design tokens; dark/light and room tone classes; the breath animation
-  layout.tsx             fonts (self-hosted via next/font), theme provider, metadata from settings
-  page.tsx               home page: composes the sections
-  not-found.tsx          on-brand 404
+  page.tsx, work/, privacy/   public pages        admin/          the admin (actions/, (panel)/, login/)
+  globals.css                 tokens, tones, breath, motion       api/            uploads, preview, auth
+  og/                         generated share image               sitemap.ts, robots.ts
 components/
-  sections/              one component per home section (Hero, Statement, rooms, Packages, …)
-  ThemeToggle.tsx        sun/moon switch
-  BreathToggle.tsx       pause/resume the breathing
-lib/
-  content.ts             cached content queries (tag "content"; admin saves revalidate it)
-  storage.ts             storage interface: Vercel Blob, or public/uploads locally
-  emphasis.tsx           *italic* → <em>, safely
-prisma/
-  schema.prisma          data model
-  migrations/            SQL migrations applied on deploy
-  seed.ts                reference content and artwork
-design-reference/        the approved design and its artwork
-tests/                   unit (Vitest) and e2e (Playwright)
+  sections/   home sections   work/  gallery, phones, frames      viewers/  lightbox, reels
+  motion/     Lenis + GSAP effects, cursor, progress              admin/    editor building blocks
+lib/          content queries, mail, storage, media checks, validation, drafts, auth helpers
+prisma/       schema, migrations, seed (+ seed-assets/)           tests/    unit + e2e
+docs/         CAITLY_GUIDE.md
 ```
 
 ## Rules for contributors
 
 - The reference design is approved: don't change layout, palette or type without asking Caitly.
 - Never invent testimonials, client names, results or statistics. Use the `isPlaceholder` flag.
-- Colours come from tokens in `app/globals.css`; never hard-code them in components. The contrast test will catch a
-  token that fails AA.
-- Keep new animation in step with the breath (`--breath-dur`), animate only `transform`, `opacity` and `filter`, and
-  respect `prefers-reduced-motion`.
+- Colours come from tokens in `app/globals.css`; the contrast test fails if a token drops below AA.
+- Animate only `transform`, `opacity` and `filter`. Keep a CSS animation and a GSAP transform off the same element
+  (the hero and frames use nested wrappers for this). Respect `prefers-reduced-motion`.
+- Avoid Prettier plugins that rewrite class strings: one once broke the room layout by stripping a space.

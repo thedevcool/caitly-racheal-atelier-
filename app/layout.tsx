@@ -10,22 +10,21 @@ import { db } from "@/lib/db";
 import "./globals.css";
 
 // next/font self-hosts these at build time: no runtime Google Fonts requests.
+// Variable fonts: one file per style instead of one per weight
 const cormorant = Cormorant_Garamond({
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
   style: ["normal", "italic"],
   variable: "--font-cormorant",
   display: "swap",
 });
 const inter = Inter({
   subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
   variable: "--font-inter",
   display: "swap",
 });
 const nanum = Nanum_Myeongjo({
   subsets: ["latin"],
-  weight: ["400", "700"],
+  weight: "400", // no bold Korean anywhere, so one weight halves the glyph downloads
   variable: "--font-nanum",
   display: "swap",
   preload: false, // Korean glyph files are large; load them on demand
@@ -46,11 +45,13 @@ export async function generateMetadata(): Promise<Metadata> {
       title,
       description,
       type: "website",
+      // Caitly's chosen share image, or the generated silk-and-name default
       images: og
         ? [{ url: og.url, width: og.width ?? undefined, height: og.height ?? undefined, alt: og.alt }]
-        : [],
+        : [{ url: "/og", width: 1200, height: 630, alt: "Caitly Racheal: I breathe life into brands." }],
     },
-    twitter: { card: "summary_large_image", title, description },
+    twitter: { card: "summary_large_image", title, description, images: og ? [og.url] : ["/og"] },
+    alternates: { canonical: "/" },
   };
 }
 
@@ -81,6 +82,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <script dangerouslySetInnerHTML={{ __html: EARLY }} />
       </head>
       <body>
+        <a className="skip" href="#main">
+          Skip to content
+        </a>
         <ThemeProvider defaultTheme={settings?.defaultTheme ?? "dark"}>
           {children}
           {/* Whole-page breathing vignette (decorative; see "Breath" in globals.css) */}

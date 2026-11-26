@@ -21,7 +21,15 @@ export function Hero({ settings, image, rooms }: Props) {
       <div className="hero-parallax" data-hero-parallax>
         <div className="hero-shift" data-hero-shift>
           <div className="hero-media">
-            <MediaImage media={image} className="hero-img" fill priority sizes="100vw" quality={80} />
+            <MediaImage
+              media={image}
+              className="hero-img"
+              fill
+              priority
+              fetchPriority="high"
+              sizes="100vw"
+              quality={80}
+            />
           </div>
         </div>
       </div>

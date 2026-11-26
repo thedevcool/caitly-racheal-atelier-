@@ -486,3 +486,8 @@ TURNSTILE_SECRET_KEY=
 - **Fidelity notes:** the reference's middle frame `margin-top:-24px` is overridden by its inline `margin:0`, so the approved render has all three frames top-aligned; we match the render. On phones (≤600px) the hero scrim is taller so the intro passes AA over the bright silk.
 - **Seeded packages are drafts** (`visible: false`, price "From [your price]"), so the Packages strip stays hidden until Caitly sets real prices.
 - **The page breathes** (requested by the client after phase 1). One shared 10s rhythm (≈4s inhale, 6s exhale) makes the artwork and hero headline swell and settle together, and a fixed vignette over the whole viewport (`.breath-veil`) opens on the inhale. Only transform and opacity animate. A pause button sits beside the theme toggle (WCAG 2.2.2) and is remembered; `prefers-reduced-motion` turns it all off. In phase 5, keep every new animation in step with `--breath-dur` and don't fight it: the Ken Burns drift and parallax sit on the image inside `.hero-media`, which itself breathes.
+- **Phases 2–6 notes:** schema additions `LoginAttempt` (hashed-IP login rate limit) and `Draft` (Preview of
+  unsaved edits via draft mode). Admin forms submit manually (no `<form action>`), because React resets a form
+  after its action runs and that would wipe unsaved edits on a failed save. Uploads go browser → Vercel Blob,
+  then the server checks magic bytes before creating the Media row. GSAP/Lenis load after the page is idle;
+  effects batch their layout reads. The optional WebGL silk shader was not built.

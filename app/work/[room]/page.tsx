@@ -38,7 +38,7 @@ export default async function RoomPage({ params }: Params) {
     // The whole page takes the room's palette; every band reads the same tokens
     <div className={tone ? `tone-${tone} room-page` : "room-page"}>
       <PageHead rooms={navRooms} />
-      <main>
+      <main id="main">
         <section
           className={tone ? `band tone-${tone} room-hero` : "band room-hero"}
           aria-labelledby="room-title"

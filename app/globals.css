@@ -1216,7 +1216,7 @@ html[data-motion="paused"] .contact-media .contact-img {
   display: block;
   font-size: 0.24em;
   letter-spacing: 0;
-  color: var(--accent-ko);
+  color: var(--accent); /* small on phones, so the body-text accent (AA 4.5:1) */
   margin-bottom: 0.5em;
 }
 .room-headline {
@@ -1359,7 +1359,7 @@ html[data-motion="paused"] .contact-media .contact-img {
   line-height: 1;
 }
 .next-name .ko {
-  color: var(--accent-ko);
+  color: var(--accent);
   font-size: 0.6em;
 }
 .next-room:hover .next-name {
@@ -1985,7 +1985,9 @@ html.intro .intro-overlay {
   z-index: 100;
   display: grid;
   place-items: center;
-  background: #0b0b0c;
+  /* 96%, not 100%: an opaque cover makes Chrome skip painting the hero
+     underneath, which delays LCP. The silk just glimmers through. */
+  background: rgba(11, 11, 12, 0.96);
   color: #ede6da;
   animation: intro-out 0.45s var(--ease-silk) 0.95s forwards;
   cursor: pointer;
@@ -2574,4 +2576,37 @@ html.lenis body {
 }
 .lenis.lenis-stopped {
   overflow: clip;
+}
+
+/* Privacy and other text pages */
+.prose .wrap {
+  max-width: 720px;
+}
+.prose h2 {
+  font-size: clamp(28px, 3vw, 36px);
+  margin: 40px 0 12px;
+}
+.prose p {
+  color: var(--muted);
+  font-size: 17px;
+  max-width: 62ch;
+}
+.prose a {
+  color: var(--accent);
+}
+/* Skip link */
+.skip {
+  position: fixed;
+  left: 16px;
+  top: -100px;
+  z-index: 200;
+  padding: 12px 18px;
+  border-radius: 999px;
+  background: var(--gold);
+  color: #0b0b0c;
+  font-weight: 500;
+  text-decoration: none;
+}
+.skip:focus {
+  top: 16px;
 }

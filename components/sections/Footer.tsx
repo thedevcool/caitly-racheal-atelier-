@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { SiteSettings } from "@prisma/client";
 
 /** Copyright, social links (plain labels until URLs are set in Settings), Korean tagline. */
@@ -10,7 +11,9 @@ export function Footer({ settings }: { settings: SiteSettings }) {
   return (
     <>
       <footer className="footer">
-        <span>© {new Date().getFullYear()} Caitly Racheal Atelier</span>
+        <span>
+          © {new Date().getFullYear()} Caitly Racheal Atelier · <Link href="/privacy">Privacy</Link>
+        </span>
         <span>
           {socials.map(([label, url], i) => (
             <span key={label}>
