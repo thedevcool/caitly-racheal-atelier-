@@ -14,6 +14,29 @@ const SILK = "silk"; // CustomEase "0.22, 1, 0.36, 1", registered in MotionRoot
 const below = (el: Element) => el.getBoundingClientRect().top > window.innerHeight * 0.92;
 const mobile = () => !window.matchMedia("(min-width: 601px)").matches; // phones are the base case
 
+/**
+ * Keep together pieces with no space between them, such as an emphasised word
+ * and the punctuation after it ("*sell*,"): otherwise the line could break
+ * between them and leave the comma at the start of the next line.
+ */
+function glue(node: Node) {
+  let run: Node[] = [];
+  const close = () => {
+    if (run.length > 1) {
+      const g = document.createElement("span");
+      g.className = "rw-glue";
+      run[0].parentNode?.insertBefore(g, run[0]);
+      g.append(...run);
+    }
+    run = [];
+  };
+  for (const child of [...node.childNodes]) {
+    if (child.nodeType === Node.TEXT_NODE && /^\s*$/.test(child.textContent ?? "")) close();
+    else run.push(child);
+  }
+  close();
+}
+
 /** Wrap each word of an element in a mask + inner span, keeping <em> and spacing. */
 function splitWords(el: HTMLElement) {
   if (el.dataset.split) return el.querySelectorAll<HTMLElement>(".rw-i");
@@ -38,6 +61,7 @@ function splitWords(el: HTMLElement) {
         child.replaceWith(frag);
       } else if (child.nodeType === Node.ELEMENT_NODE) walk(child);
     }
+    glue(node);
   };
   walk(el);
   return el.querySelectorAll<HTMLElement>(".rw-i");

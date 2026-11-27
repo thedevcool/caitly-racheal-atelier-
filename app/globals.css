@@ -2625,6 +2625,9 @@ html.motion .seal.is-waiting {
 .rw-i {
   display: inline-block;
 }
+.rw-glue {
+  white-space: nowrap; /* see glue() in components/motion/effects.ts */
+}
 /* Build on scroll (components/motion/effects.ts): words may fly in from
    outside their masks, and each piece wears a thin gold selection outline
    while it travels, like a layer being placed in a design tool */
