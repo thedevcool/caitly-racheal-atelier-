@@ -2625,6 +2625,16 @@ html.motion .seal.is-waiting {
 .rw-i {
   display: inline-block;
 }
+/* Build on scroll (components/motion/effects.ts): words may fly in from
+   outside their masks, and each piece wears a thin gold selection outline
+   while it travels, like a layer being placed in a design tool */
+[data-build] .rw {
+  overflow: visible;
+}
+.is-building {
+  outline: 1px solid rgba(212, 180, 122, 0.75);
+  outline-offset: 4px;
+}
 /* Lenis */
 html.lenis,
 html.lenis body {

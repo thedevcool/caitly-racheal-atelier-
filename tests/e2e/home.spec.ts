@@ -265,6 +265,54 @@ test.describe("assembly on every page view", () => {
   });
 });
 
+test("below the first screen, the page builds itself piece by piece as it scrolls in", async ({
+  browser,
+}) => {
+  const context = await browser.newContext();
+  await context.addInitScript(() => sessionStorage.setItem("atelier-intro", "1")); // no name intro
+  const page = await context.newPage();
+  await page.goto("/");
+  // wait for the motion libraries (loaded after idle) to hide what's below the fold
+  const heading = page.locator("#commission h2");
+  await expect.poll(() => heading.evaluate((e) => getComputedStyle(e).opacity), { timeout: 15000 }).toBe("0");
+
+  // record every piece that wears the building outline, and the most at once
+  await page.evaluate(() => {
+    const w = window as unknown as { built: Set<Element>; most: number };
+    w.built = new Set();
+    w.most = 0;
+    new MutationObserver(() => {
+      const now = document.querySelectorAll(".is-building");
+      now.forEach((e) => w.built.add(e));
+      w.most = Math.max(w.most, now.length);
+    }).observe(document.body, { subtree: true, attributes: true, attributeFilter: ["class"] });
+  });
+  await heading.scrollIntoViewIfNeeded();
+  // it builds, and lands exactly in place
+  await expect.poll(() => heading.locator(".rw-i").count(), { timeout: 5000 }).toBeGreaterThan(0);
+  await expect
+    .poll(
+      () =>
+        heading.evaluate((h) =>
+          [...h.querySelectorAll(".rw-i")].every(
+            (w) => getComputedStyle(w).opacity === "1" && getComputedStyle(w).transform === "none",
+          ),
+        ),
+      { timeout: 20000 },
+    )
+    .toBe(true);
+  const { built, most } = await page.evaluate(() => {
+    const w = window as unknown as { built: Set<Element>; most: number };
+    return { built: w.built.size, most: w.most };
+  });
+  expect(built).toBeGreaterThan(1);
+  // one at a time, in sequence: never the whole section at once
+  expect(most).toBeLessThanOrEqual(12);
+  // nothing makes the page scroll sideways while pieces fly in
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await context.close();
+});
+
 test("with reduced motion the contact form can still be filled in and sent", async ({ browser }) => {
   const context = await browser.newContext({ reducedMotion: "reduce" });
   await context.addInitScript(() => {

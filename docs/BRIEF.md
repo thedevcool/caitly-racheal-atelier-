@@ -506,6 +506,11 @@ TURNSTILE_SECRET_KEY=
   with sessionStorage `atelier-seen` = `"*"`). Pure CSS with `backwards` fill (never `forwards`, so GSAP effects keep working);
   offsets from `lib/scatter.ts`; mark new first-screen elements with `piece()` / `<PieceWords>` from
   `components/Pieces.tsx`. A tap or key skips it; off under reduced motion or when motion is paused.
+- **The page keeps building as you scroll (requested by the client).** Below the first screen, each heading
+  (word by word), text block, chip and button arrives scattered and flies into place with a gold selection
+  outline as it scrolls into view, one piece at a time from a single queue in page order (it speeds up if a
+  backlog builds). `reveals()` in `components/motion/effects.ts`; tests turn it off with the same
+  `atelier-seen = "*"` flag; with motion paused, pieces simply appear.
 - **Phases 2–6 notes:** schema additions `LoginAttempt` (hashed-IP login rate limit) and `Draft` (Preview of
   unsaved edits via draft mode). Admin forms submit manually (no `<form action>`), because React resets a form
   after its action runs and that would wipe unsaved edits on a failed save. Uploads go browser → Vercel Blob,

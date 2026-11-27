@@ -44,10 +44,20 @@ function splitWords(el: HTMLElement) {
 }
 
 /**
- * Headings rise line by line from a mask; body fades after; chips stagger 60ms.
+ * Build on scroll: as the visitor scrolls, each part of the page below the
+ * first screen arrives scattered (flung in from far off, spinning, at odd
+ * sizes) and flies into place with a thin gold "selection" outline, like a
+ * designer laying it out live. Pieces build ONE AT A TIME, in page order, from
+ * a single queue: a heading word by word, then its text, then its chips, then
+ * the next block. If the visitor scrolls fast and a backlog builds up, the
+ * queue speeds up so nothing stays missing for long. The first screen is built
+ * by the CSS assembly instead (see "Assemble" in globals.css).
+ *
  * Performance: every position is read in one pass, then every style is
  * written in one pass (no layout thrashing), and headings are only split into
- * words when they are about to enter the screen.
+ * words when they are about to enter the screen. Only transform and opacity
+ * animate, and the transform is cleared once a piece lands, so other effects
+ * keep working. With motion paused, pieces simply appear.
  */
 export function reveals({ gsap, ScrollTrigger }: Ctx) {
   const skip = (el: Element) => !!el.closest(".hero, dialog, .statement, .brief-card");
@@ -62,63 +72,108 @@ export function reveals({ gsap, ScrollTrigger }: Ctx) {
 
   // READ: one layout pass for everything
   const fold = window.innerHeight * 0.92;
-  const isBelow = new Map<HTMLElement, boolean>();
-  for (const el of [...headings, ...fades, ...chipLists])
-    isBelow.set(el, el.getBoundingClientRect().top > fold);
-  const later = (els: HTMLElement[]) => els.filter((el) => isBelow.get(el));
+  const all = [...headings, ...fades, ...chipLists].filter((el) => el.getBoundingClientRect().top > fold);
+  // page order, so blocks build top to bottom
+  all.sort((x, y) => (x.compareDocumentPosition(y) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1));
+  const kind = new Map<HTMLElement, "heading" | "chips" | "block">();
+  for (const el of all)
+    kind.set(el, headings.includes(el) ? "heading" : chipLists.includes(el) ? "chips" : "block");
 
   // WRITE: hide what's below the fold (content on screen at load is never hidden)
-  const hHeads = later(headings);
-  const hFades = later(fades);
-  const hChips = later(chipLists);
-  gsap.set(hHeads, { opacity: 0 });
-  gsap.set(
-    hFades.filter((el) => !calm(el)),
-    { opacity: 0, y: 18 },
-  );
-  gsap.set(hFades.filter(calm), { opacity: 0 });
-  hChips.forEach((l) => gsap.set(l.children, { opacity: 0, y: 10 }));
+  for (const el of all) gsap.set(kind.get(el) === "chips" ? el.children : el, { opacity: 0 });
 
-  hHeads.forEach((h) =>
+  const build = builder(gsap);
+  // Elements entering in the same frame are flushed together, in page order
+  let pending: HTMLElement[] = [];
+  let flushing = false;
+  const flush = () => {
+    flushing = false;
+    const batch = pending.sort((x, y) => all.indexOf(x) - all.indexOf(y));
+    pending = [];
+    for (const el of batch) {
+      const k = kind.get(el);
+      if (k === "heading") {
+        const words = [...splitWords(el)];
+        el.dataset.build = "1"; // lets words fly outside their masks
+        gsap.set(words, { opacity: 0 });
+        gsap.set(el, { opacity: 1 });
+        build(words, calm(el) ? 0.2 : 0.14);
+      } else if (k === "chips") build([...el.children] as HTMLElement[], 0.16);
+      else build([el], 0.3);
+    }
+  };
+
+  for (const el of all)
     ScrollTrigger.create({
-      trigger: h,
+      trigger: el,
       start: "top 92%",
       once: true,
       onEnter: () => {
-        if (calm(h)) return void gsap.to(h, { opacity: 1, duration: 1.6, ease: "sine.out" });
-        const words = [...splitWords(h)];
-        // group words into lines (one read), so each line rises together
-        const tops = words.map((w) => Math.round((w.parentElement as HTMLElement).offsetTop));
-        const lines = [...new Set(tops)].sort((a, b) => a - b);
-        gsap.set(h, { opacity: 1 });
-        words.forEach((w, i) =>
-          gsap.from(w, { yPercent: 110, duration: 1.15, ease: SILK, delay: lines.indexOf(tops[i]) * 0.12 }),
-        );
+        pending.push(el);
+        if (!flushing) {
+          flushing = true;
+          requestAnimationFrame(flush);
+        }
       },
-    }),
-  );
+    });
+}
 
-  ScrollTrigger.batch(hFades, {
-    start: "top 92%",
-    once: true,
-    onEnter: (batch) => {
-      const slow = batch.filter(calm);
-      const rest = batch.filter((el) => !calm(el));
-      if (rest.length)
-        gsap.to(rest, { opacity: 1, y: 0, duration: 1, ease: SILK, stagger: 0.08, delay: 0.2 });
-      if (slow.length) gsap.to(slow, { opacity: 1, duration: 1.6, ease: "sine.out" });
-    },
-  });
-
-  hChips.forEach((list) =>
-    ScrollTrigger.create({
-      trigger: list,
-      start: "top 94%",
-      once: true,
-      onEnter: () =>
-        gsap.to(list.children, { opacity: 1, y: 0, duration: 0.8, ease: SILK, stagger: 0.06, delay: 0.3 }),
-    }),
-  );
+/**
+ * The build queue: each call adds pieces to the end of one shared timeline,
+ * `gap` seconds apart, with a short breath between blocks. Scatter offsets
+ * spiral out along the golden angle (as in lib/scatter.ts) so no two pieces
+ * come from the same place.
+ */
+function builder(gsap: G) {
+  let next = 0; // ticker time when the next piece may start
+  let n = 0;
+  let off = false; // tests turn building off, as they do the assembly
+  try {
+    off = JSON.parse(sessionStorage.getItem("atelier-seen") || "[]") === "*";
+  } catch {}
+  return (pieces: HTMLElement[], gap: number) => {
+    const now = gsap.ticker.time;
+    next = Math.max(next, now);
+    const vw = window.innerWidth / 100;
+    const vh = window.innerHeight / 100;
+    for (const p of pieces) {
+      if (off || document.documentElement.dataset.motion === "paused") {
+        gsap.set(p, { opacity: 1 });
+        continue;
+      }
+      const backlog = next - now;
+      const i = n++;
+      const angle = i * 2.39996;
+      const r = 40 + ((i * 37) % 61);
+      gsap.fromTo(
+        p,
+        {
+          x: Math.cos(angle) * r * vw,
+          y: Math.sin(angle) * r * 0.6 * vh,
+          rotation: ((i * 137) % 361) - 180,
+          scale: 0.35 + ((i * 53) % 155) / 100,
+          opacity: 0,
+        },
+        {
+          x: 0,
+          y: 0,
+          rotation: 0,
+          scale: 1,
+          opacity: 1,
+          duration: backlog > 3 ? 1 : 1.6,
+          ease: SILK,
+          delay: next - now,
+          onStart: () => p.classList.add("is-building"),
+          onComplete: () => {
+            p.classList.remove("is-building");
+            gsap.set(p, { clearProps: "transform" });
+          },
+        },
+      );
+      next += backlog > 3 ? gap / 3 : gap;
+    }
+    next += 0.3; // a breath between blocks
+  };
 }
 
 /** Hero: parallax at 0.6× scroll, pointer shift (12px max), tilt on phones after a gesture. */
