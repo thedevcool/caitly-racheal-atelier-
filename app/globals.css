@@ -1766,6 +1766,13 @@ html[data-motion="paused"] .contact-media .contact-img {
 .brief-back:focus {
   outline: none;
 }
+/* Whichever side of the card isn't showing must never catch taps. Under
+   reduced motion the flip becomes a fade, so the hidden side is merely
+   transparent and would otherwise sit on top of the form. */
+.brief-card:not(.is-sent) .brief-back,
+.brief-card.is-sent .brief-front {
+  pointer-events: none;
+}
 .burst {
   position: absolute;
   inset: 0;

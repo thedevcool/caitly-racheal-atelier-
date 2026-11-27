@@ -263,3 +263,31 @@ test.describe("assembly on each page's first visit", () => {
     await context.close();
   });
 });
+
+test("with reduced motion the contact form can still be filled in and sent", async ({ browser }) => {
+  const context = await browser.newContext({ reducedMotion: "reduce" });
+  await context.addInitScript(() => {
+    sessionStorage.setItem("atelier-intro", "1");
+    sessionStorage.setItem("atelier-seen", JSON.stringify("*"));
+  });
+  const page = await context.newPage();
+  await page.goto("/#commission");
+  const form = page.getByRole("form", { name: "Commission enquiry" });
+  await expect(form.getByRole("button", { name: "Send my brief" })).toBeEnabled();
+  // nothing may sit on top of the fields (the hidden thank-you side once did)
+  await form.getByRole("textbox", { name: "Your name" }).fill("Calm Visitor");
+  await form.getByRole("textbox", { name: "Email" }).fill("calm@example.test");
+  await form
+    .getByRole("textbox", { name: "Tell me about the piece" })
+    .fill("A calm brief, sent with reduced motion on.");
+  await page.waitForTimeout(3200);
+  // Like a person: finish typing, bring Send into view, then tap where it actually is
+  // (a real tap at the button's position, so nothing on top of it may swallow it)
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+  const send = form.getByRole("button", { name: "Send my brief" });
+  await send.evaluate((el) => el.scrollIntoView({ block: "center" }));
+  const box = (await send.boundingBox())!;
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  await expect(page.locator(".brief-back")).toContainText("감사합니다", { timeout: 15_000 });
+  await context.close();
+});
