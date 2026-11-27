@@ -2028,7 +2028,7 @@ html.motion .hero h1 em {
   animation: shimmer-text 1.8s ease-in-out 1.1s 1 both;
 }
 html.motion.intro .hero h1 em {
-  animation-delay: 3.4s; /* after the page has assembled itself */
+  animation-delay: 8.6s; /* after the page has assembled itself */
 }
 @keyframes shimmer-text {
   to {
@@ -2674,35 +2674,46 @@ html.lenis body {
 }
 
 /* ==========================================================================
-   Assemble: the first time a visitor sees each page in a session, the page
-   arrives in pieces and composes itself in front of them, like a designer
+   Assemble: every time a visitor opens a page, it arrives in pieces flung
+   all over (and off) the screen and composes itself in front of them, like a designer
    laying out the page live, while a caption narrates it ("Rebranding this
    page, live" → "Now imagine it's your brand"). Proof of craft, not decoration.
 
    Who decides: the early script in app/layout.tsx (first page, before paint)
-   and app/template.tsx (in-site navigation) add html.assembling for a page
-   not yet in sessionStorage "atelier-seen", then remove it when done. The
-   first page of the session also has html.intro (the name intro), so its
-   assembly starts later.
+   and app/template.tsx (in-site navigation) add html.assembling on every page
+   view, then remove it when done. The first page of the session also has
+   html.intro (the name intro, once per session), so its assembly starts later.
 
    Timeline from --asm (1.35s after the intro; 0.2s on later pages):
-     gridlines fade in → the silk settles (home) → pieces fly into place 70ms
-     apart, each with a thin gold "selection" frame that fades as it lands →
-     the caption switches to "done" → everything fades by about --asm + 3.8s
+     gridlines fade in → (home) the silk drops in as a small framed portrait,
+     swings, hangs, then widens into the full background → pieces fly into
+     place 110ms apart over 2.4s each (slow on purpose: people enjoy watching
+     it tidy itself), each with a thin gold "selection" frame that fades as it
+     lands → the caption switches to "done" → everything fades by about
+     --asm + --asm-len (longer on the home page, which has the portrait)
 
    Safety rules:
    - only transform and opacity animate; pieces must be block or inline-block
    - pieces use fill-mode "backwards" (never "forwards"/"both"): scattered during
      the delay, and once landed the CSS lets go, so GSAP effects keep working
-   - offsets come from lib/scatter.ts as --sx/--sy/--sr/--d
+   - offsets come from lib/scatter.ts as --sx/--sy/--sr/--ss/--d; pieces that
+     start off-screen can't cause sideways scroll (body is overflow-x: clip)
    - off under reduced motion (no "motion" class) and when motion is paused;
      a tap or key skips it (html.intro-skip)
    ========================================================================== */
 html {
   --asm: 0.2s;
+  --asm-len: 5.4s; /* how long the gridlines and caption stay */
+  --asm-bg: 0s; /* extra wait for pieces while the background hangs (home) */
 }
 html.intro {
   --asm: 1.35s;
+}
+html:has(.hero) {
+  --asm-len: 7.6s;
+}
+.hero {
+  --asm-bg: 1.5s;
 }
 .guides,
 .asm-caption {
@@ -2729,7 +2740,7 @@ html.motion.assembling .guides {
       max(5vw, 20px) 0 / calc(100% - 2 * max(5vw, 20px) + 1px) 100% no-repeat,
     repeating-linear-gradient(0deg, rgba(212, 180, 122, 0.1) 0 1px, transparent 1px 25%);
   opacity: 0;
-  animation: guides 3.4s linear calc(var(--asm) - 0.35s) forwards;
+  animation: guides var(--asm-len) linear calc(var(--asm) - 0.35s) forwards;
 }
 @media (min-width: 901px) {
   html.motion.assembling .guides {
@@ -2749,27 +2760,149 @@ html.motion.assembling .guides {
   }
 }
 
-/* The silk settles from a tilt (home; on the pointer-shift layer, so the
-   breath and Ken Burns layers underneath keep their own animations) */
+/* The background is "hung" first: the silk drops in from above as a small
+   portrait (clipped to a portrait window, with a gold frame), swings on its
+   wire, hangs still for a beat, then widens into the full-bleed background.
+   On the pointer-shift layer, so the breath and Ken Burns layers underneath
+   keep their own animations. Portrait window: at least 22% in from each side,
+   and no wider than 44vh, so it is portrait-shaped on phones and desktops. */
 html.motion.assembling .hero-shift {
-  animation: settle 1.8s var(--ease-silk) calc(var(--asm) - 0.2s) backwards;
+  --pw: max(22%, calc(50% - 22vh));
+  animation: hang 3.4s var(--ease-silk) var(--asm) backwards;
 }
-@keyframes settle {
-  from {
-    transform: rotate(-5deg) scale(1.28);
+@keyframes hang {
+  0% {
+    clip-path: inset(18% var(--pw) 24% var(--pw) round 3px);
+    transform: translateY(-75vh) rotate(-14deg) scale(0.86);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  24% {
+    clip-path: inset(18% var(--pw) 24% var(--pw) round 3px);
+    transform: translateY(0) rotate(5deg) scale(0.86);
+  }
+  32% {
+    transform: rotate(-2.5deg) scale(0.86);
+  }
+  39% {
+    transform: rotate(1deg) scale(0.86);
+  }
+  46%,
+  54% {
+    clip-path: inset(18% var(--pw) 24% var(--pw) round 3px);
+    transform: rotate(0deg) scale(0.86);
+  }
+  100% {
+    clip-path: inset(0 0 0 0 round 0);
+    transform: none;
+  }
+}
+/* The portrait's gold frame and picture wire: same motion while it hangs,
+   then it opens outwards and fades as the picture widens */
+html.motion.assembling .hero-parallax::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  top: 18%;
+  bottom: 24%;
+  left: max(22%, calc(50% - 22vh));
+  right: max(22%, calc(50% - 22vh));
+  border: 2px solid rgba(212, 180, 122, 0.85);
+  border-radius: 3px;
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.45),
+    inset 0 0 0 6px rgba(11, 11, 12, 0.35);
+  pointer-events: none;
+  opacity: 0;
+  animation: hang-frame 3.4s var(--ease-silk) var(--asm) backwards;
+}
+html.motion.assembling .hero-parallax::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  left: 50%;
+  top: calc(18% - 9vh);
+  width: min(26vh, 40%);
+  height: 9vh;
+  transform: translateX(-50%);
+  background:
+    radial-gradient(circle at 50% 4px, #d4b47a 3px, transparent 4px),
+    linear-gradient(
+        to bottom right,
+        transparent calc(50% - 0.6px),
+        rgba(212, 180, 122, 0.7) 50%,
+        transparent calc(50% + 0.6px)
+      )
+      0 0 / 50% 100% no-repeat,
+    linear-gradient(
+        to bottom left,
+        transparent calc(50% - 0.6px),
+        rgba(212, 180, 122, 0.7) 50%,
+        transparent calc(50% + 0.6px)
+      )
+      100% 0 / 50% 100% no-repeat;
+  pointer-events: none;
+  opacity: 0;
+  animation: hang-wire 3.4s var(--ease-silk) var(--asm) backwards;
+}
+@keyframes hang-frame {
+  0% {
+    transform: translateY(-75vh) rotate(-14deg) scale(0.86);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  24% {
+    transform: translateY(0) rotate(5deg) scale(0.86);
+  }
+  32% {
+    transform: rotate(-2.5deg) scale(0.86);
+  }
+  39% {
+    transform: rotate(1deg) scale(0.86);
+  }
+  46%,
+  54% {
+    transform: rotate(0deg) scale(0.86);
+    opacity: 1;
+  }
+  80%,
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+@keyframes hang-wire {
+  0%,
+  20% {
+    opacity: 0;
+  }
+  28%,
+  52% {
+    opacity: 1;
+  }
+  62%,
+  100% {
+    opacity: 0;
   }
 }
 
 /* Each piece flies from its scattered spot into place */
 html.motion.assembling .piece {
   position: relative;
-  animation: assemble 1.15s var(--ease-silk) backwards;
-  animation-delay: calc(var(--asm) + var(--d, 0ms));
+  animation: assemble 2.4s var(--ease-silk) backwards;
+  animation-delay: calc(var(--asm) + var(--asm-bg) + var(--d, 0ms));
 }
 @keyframes assemble {
   from {
-    transform: translate(var(--sx, 0), var(--sy, 0)) rotate(var(--sr, 0deg)) scale(0.92);
-    opacity: 0.75;
+    transform: translate(var(--sx, 0), var(--sy, 0)) rotate(var(--sr, 0deg)) scale(var(--ss, 0.92));
+    opacity: 0;
+  }
+  35% {
+    opacity: 1;
   }
 }
 /* Headline words arrive by assembly instead of the usual rise. Duration 0
@@ -2789,8 +2922,8 @@ html.motion.assembling .piece::after {
   border-radius: inherit;
   pointer-events: none;
   opacity: 0;
-  animation: frame 1.15s ease-out backwards;
-  animation-delay: calc(var(--asm) + var(--d, 0ms));
+  animation: frame 2.4s ease-out backwards;
+  animation-delay: calc(var(--asm) + var(--asm-bg) + var(--d, 0ms));
 }
 @keyframes frame {
   0%,
@@ -2824,17 +2957,17 @@ html.motion.assembling .asm-caption {
   pointer-events: none;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
-  animation: asm-caption 3.8s var(--ease-silk) var(--asm) both;
+  animation: asm-caption var(--asm-len) var(--ease-silk) var(--asm) both;
 }
 .asm-caption span {
   grid-area: 1 / 1;
 }
 html.motion.assembling .asm-working {
-  animation: asm-working 3.8s linear var(--asm) both;
+  animation: asm-working var(--asm-len) linear var(--asm) both;
 }
 html.motion.assembling .asm-done {
   color: #d4b47a;
-  animation: asm-done 3.8s linear var(--asm) both;
+  animation: asm-done var(--asm-len) linear var(--asm) both;
 }
 @keyframes asm-caption {
   0% {
@@ -2876,9 +3009,13 @@ html.motion.assembling .asm-done {
 html.intro-skip .piece,
 html.intro-skip .piece::after,
 html.intro-skip .hero-shift,
+html.intro-skip .hero-parallax::before,
+html.intro-skip .hero-parallax::after,
 html[data-motion="paused"] .piece,
 html[data-motion="paused"] .piece::after,
-html[data-motion="paused"] .hero-shift {
+html[data-motion="paused"] .hero-shift,
+html[data-motion="paused"] .hero-parallax::before,
+html[data-motion="paused"] .hero-parallax::after {
   animation: none !important;
 }
 html.intro-skip .guides,

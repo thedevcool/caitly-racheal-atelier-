@@ -10,9 +10,9 @@ let assemblyTimer: ReturnType<typeof setTimeout> | undefined;
  * Route transitions: each new page fades in with a slight upward drift. The
  * very first page skips it, so nothing delays the first paint (or LCP).
  *
- * It also starts the first-visit assembly for pages reached by in-site
- * navigation (the very first page is handled by the early script in the
- * layout, before paint). Uses the same "atelier-seen" list in sessionStorage.
+ * It also starts the assembly for every page reached by in-site navigation
+ * (the very first page is handled by the early script in the layout, before
+ * paint).
  */
 export default function Template({ children }: { children: React.ReactNode }) {
   const path = usePathname();
@@ -28,13 +28,8 @@ export default function Template({ children }: { children: React.ReactNode }) {
     if (!animate) return;
     const d = document.documentElement;
     if (!d.classList.contains("motion") || d.dataset.motion === "paused" || path.startsWith("/admin")) return;
-    let seen: string[] | string = [];
     try {
-      seen = JSON.parse(sessionStorage.getItem("atelier-seen") || "[]");
-    } catch {}
-    if (seen === "*" || !Array.isArray(seen) || seen.includes(path)) return;
-    try {
-      sessionStorage.setItem("atelier-seen", JSON.stringify([...seen, path]));
+      if (JSON.parse(sessionStorage.getItem("atelier-seen") || "[]") === "*") return; // tests
     } catch {}
 
     // Restart the animations: drop the classes, force a style flush, add again
@@ -42,7 +37,10 @@ export default function Template({ children }: { children: React.ReactNode }) {
     void d.offsetWidth;
     d.classList.add("assembling");
     clearTimeout(assemblyTimer);
-    assemblyTimer = setTimeout(() => d.classList.remove("assembling"), 4400);
+    assemblyTimer = setTimeout(
+      () => d.classList.remove("assembling"),
+      document.querySelector(".hero") ? 9600 : 7400,
+    );
 
     const t0 = Date.now();
     const off = () => {
@@ -50,7 +48,7 @@ export default function Template({ children }: { children: React.ReactNode }) {
       removeEventListener("keydown", skip);
     };
     const skip = () => {
-      if (Date.now() - t0 < 3500) d.classList.add("intro-skip");
+      if (Date.now() - t0 < 7000) d.classList.add("intro-skip");
       off();
     };
     addEventListener("click", skip);

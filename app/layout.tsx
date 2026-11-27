@@ -63,20 +63,19 @@ export const viewport: Viewport = {
 };
 
 // A fixed string (no visitor or admin text), so inlining it is safe.
-// Runs before first paint: restores a paused-motion choice, and decides whether
-// this page is new to the visitor this session. If so it "assembles" (pieces fly
-// into place); the first page of the session also gets the name intro.
-// A tap or key in the first 3.5s skips both. In-site navigations are handled by
-// app/template.tsx with the same "atelier-seen" list.
+// Runs before first paint: restores a paused-motion choice, then makes the page
+// "assemble" (pieces fly into place) on every visit; the first page of the
+// session also gets the name intro. A tap or key while it plays skips both.
+// In-site navigations are handled by app/template.tsx. (Tests set sessionStorage
+// "atelier-seen" to "*" to turn the assembly off.)
 const EARLY = `(function(){var d=document.documentElement;d.classList.add('js');
 try{if(localStorage.getItem('atelier-motion')==='paused')d.dataset.motion='paused'}catch(e){}
 if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;d.classList.add('motion');
 var p=location.pathname;if(p.indexOf('/admin')===0||d.dataset.motion==='paused')return;
-try{var s=sessionStorage,seen=JSON.parse(s.getItem('atelier-seen')||'[]');
-if(seen==='*'||seen.indexOf(p)>-1)return;seen.push(p);s.setItem('atelier-seen',JSON.stringify(seen));
+try{var s=sessionStorage;if(JSON.parse(s.getItem('atelier-seen')||'[]')==='*')return;
 var first=!s.getItem('atelier-intro');if(first){d.classList.add('intro');s.setItem('atelier-intro','1')}
-d.classList.add('assembling');setTimeout(function(){d.classList.remove('assembling')},first?5800:4400);
-var t0=Date.now(),skip=function(){if(Date.now()-t0<3500){var o=document.querySelector('[data-intro]');if(o)o.style.display='none';d.classList.add('intro-skip')}
+d.classList.add('assembling');setTimeout(function(){d.classList.remove('assembling')},first?11000:8800);
+var t0=Date.now(),skip=function(){if(Date.now()-t0<9000){var o=document.querySelector('[data-intro]');if(o)o.style.display='none';d.classList.add('intro-skip')}
 removeEventListener('click',skip);removeEventListener('keydown',skip)};addEventListener('click',skip);addEventListener('keydown',skip);}catch(e){}})();`;
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
