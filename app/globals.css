@@ -2656,62 +2656,74 @@ html.lenis body {
 }
 
 /* ==========================================================================
-   Assemble: on the first visit of a session, the hero arrives in pieces and
-   composes itself in front of the visitor, like a designer laying out a page.
+   Assemble: the first time a visitor sees each page in a session, the page
+   arrives in pieces and composes itself in front of them, like a designer
+   laying out the page live, while a caption narrates it ("Rebranding this
+   page, live" → "Now imagine it's your brand"). Proof of craft, not decoration.
 
-   Timeline (seconds from load), all pure CSS so nothing flashes or waits on
-   JavaScript:
-     0.0–1.4  the name intro plays over the page (already built)
-     1.0      faint gold layout gridlines appear behind the pieces
-     1.2      the silk settles from a tilt
-     1.35+    each piece (Korean line, every headline word, intro, buttons,
-              then the nav) flies from its scattered spot into place, 70ms apart,
-              with a thin gold "selection" frame that fades as it lands
-     ~3.4     gridlines fade; "life" shimmers once
+   Who decides: the early script in app/layout.tsx (first page, before paint)
+   and app/template.tsx (in-site navigation) add html.assembling for a page
+   not yet in sessionStorage "atelier-seen", then remove it when done. The
+   first page of the session also has html.intro (the name intro), so its
+   assembly starts later.
 
-   Rules that keep it safe:
-   - only transform and opacity animate
-   - fill-mode "backwards" (never "forwards"/"both"): the scattered start state
-     applies during the delay, and once landed the CSS lets go, so GSAP's
-     magnetic buttons and pointer shift keep working
-   - scatter offsets come from lib/scatter.ts as --sx/--sy/--sr/--d
-   - off under reduced motion (no "motion" class), when the visitor has paused
-     motion, and instantly skipped by a tap or key (html.intro-skip)
+   Timeline from --asm (1.35s after the intro; 0.2s on later pages):
+     gridlines fade in → the silk settles (home) → pieces fly into place 70ms
+     apart, each with a thin gold "selection" frame that fades as it lands →
+     the caption switches to "done" → everything fades by about --asm + 3.8s
+
+   Safety rules:
+   - only transform and opacity animate; pieces must be block or inline-block
+   - pieces use fill-mode "backwards" (never "forwards"/"both"): scattered during
+     the delay, and once landed the CSS lets go, so GSAP effects keep working
+   - offsets come from lib/scatter.ts as --sx/--sy/--sr/--d
+   - off under reduced motion (no "motion" class) and when motion is paused;
+     a tap or key skips it (html.intro-skip)
    ========================================================================== */
-.guides {
+html {
+  --asm: 0.2s;
+}
+html.intro {
+  --asm: 1.35s;
+}
+.guides,
+.asm-caption {
   display: none;
 }
-html.motion.intro .guides {
+.pw {
+  display: inline-block; /* word pieces */
+}
+
+/* Design gridlines over the whole screen: 4 columns on phones, 12 on desktop */
+html.motion.assembling .guides {
   display: block;
-  position: absolute;
+  position: fixed;
   inset: 0;
-  z-index: 1;
+  z-index: 2;
   pointer-events: none;
-  /* 4 columns on phones, 12 on desktop, plus a few baselines: a design canvas */
   --cols: 4;
   background:
     repeating-linear-gradient(
         90deg,
-        rgba(212, 180, 122, 0.22) 0 1px,
+        rgba(212, 180, 122, 0.2) 0 1px,
         transparent 1px calc((100% - 2 * max(5vw, 20px)) / var(--cols))
       )
       max(5vw, 20px) 0 / calc(100% - 2 * max(5vw, 20px) + 1px) 100% no-repeat,
-    repeating-linear-gradient(0deg, rgba(212, 180, 122, 0.12) 0 1px, transparent 1px 25%);
+    repeating-linear-gradient(0deg, rgba(212, 180, 122, 0.1) 0 1px, transparent 1px 25%);
   opacity: 0;
-  animation: guides 3.6s linear forwards;
+  animation: guides 3.4s linear calc(var(--asm) - 0.35s) forwards;
 }
 @media (min-width: 901px) {
-  html.motion.intro .guides {
+  html.motion.assembling .guides {
     --cols: 12;
   }
 }
 @keyframes guides {
-  0%,
-  26% {
+  0% {
     opacity: 0;
   }
-  38%,
-  80% {
+  12%,
+  72% {
     opacity: 1;
   }
   100% {
@@ -2719,10 +2731,10 @@ html.motion.intro .guides {
   }
 }
 
-/* The silk settles from a tilt (on the pointer-shift layer, so the breath and
-   Ken Burns layers underneath keep their own animations) */
-html.motion.intro .hero-shift {
-  animation: settle 1.8s var(--ease-silk) 1.15s backwards;
+/* The silk settles from a tilt (home; on the pointer-shift layer, so the
+   breath and Ken Burns layers underneath keep their own animations) */
+html.motion.assembling .hero-shift {
+  animation: settle 1.8s var(--ease-silk) calc(var(--asm) - 0.2s) backwards;
 }
 @keyframes settle {
   from {
@@ -2731,10 +2743,10 @@ html.motion.intro .hero-shift {
 }
 
 /* Each piece flies from its scattered spot into place */
-html.motion.intro .piece {
+html.motion.assembling .piece {
   position: relative;
   animation: assemble 1.15s var(--ease-silk) backwards;
-  animation-delay: calc(1.35s + var(--d, 0ms));
+  animation-delay: calc(var(--asm) + var(--d, 0ms));
 }
 @keyframes assemble {
   from {
@@ -2742,12 +2754,16 @@ html.motion.intro .piece {
     opacity: 0.75;
   }
 }
-/* the headline words arrive by assembly instead of the usual rise */
-html.motion.intro .hw-i {
-  animation: none;
+/* Headline words arrive by assembly instead of the usual rise. Duration 0
+   (not "none") so nothing replays when the class is removed afterwards. */
+html.motion.assembling .hw-i {
+  animation-duration: 0s;
 }
-/* a thin gold selection frame, like a layer being placed in a design tool */
-html.motion.intro .piece::after {
+html.motion.assembling .hw {
+  overflow: visible; /* let the selection frame show */
+}
+/* A thin gold selection frame, like a layer being placed in a design tool */
+html.motion.assembling .piece::after {
   content: "";
   position: absolute;
   inset: -2px;
@@ -2756,7 +2772,7 @@ html.motion.intro .piece::after {
   pointer-events: none;
   opacity: 0;
   animation: frame 1.15s ease-out backwards;
-  animation-delay: calc(1.35s + var(--d, 0ms));
+  animation-delay: calc(var(--asm) + var(--d, 0ms));
 }
 @keyframes frame {
   0%,
@@ -2767,23 +2783,89 @@ html.motion.intro .piece::after {
     opacity: 0;
   }
 }
-/* .hw clips its word for the normal rise; let the frame show while assembling */
-html.motion.intro .hw {
-  overflow: visible;
+
+/* The caption narrating it: "working" while pieces fly, then "done" */
+html.motion.assembling .asm-caption {
+  display: grid;
+  position: fixed;
+  left: 50%;
+  bottom: calc(18px + env(safe-area-inset-bottom));
+  z-index: 60;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: rgba(11, 11, 12, 0.78);
+  border: 1px solid rgba(212, 180, 122, 0.5);
+  color: #ede6da;
+  font:
+    500 13px/1.35 var(--font-inter),
+    sans-serif;
+  letter-spacing: 0.02em;
+  text-align: center;
+  pointer-events: none;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: asm-caption 3.8s var(--ease-silk) var(--asm) both;
+}
+.asm-caption span {
+  grid-area: 1 / 1;
+}
+html.motion.assembling .asm-working {
+  animation: asm-working 3.8s linear var(--asm) both;
+}
+html.motion.assembling .asm-done {
+  color: #d4b47a;
+  animation: asm-done 3.8s linear var(--asm) both;
+}
+@keyframes asm-caption {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 12px);
+  }
+  6%,
+  88% {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, 6px);
+  }
+}
+@keyframes asm-working {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  56%,
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes asm-done {
+  0%,
+  54% {
+    opacity: 0;
+  }
+  60%,
+  100% {
+    opacity: 1;
+  }
 }
 
 /* Skipped (tap/key) or motion paused: everything simply in place */
 html.intro-skip .piece,
 html.intro-skip .piece::after,
 html.intro-skip .hero-shift,
-html.intro-skip .guides,
 html[data-motion="paused"] .piece,
 html[data-motion="paused"] .piece::after,
-html[data-motion="paused"] .hero-shift,
-html[data-motion="paused"] .guides {
+html[data-motion="paused"] .hero-shift {
   animation: none !important;
 }
 html.intro-skip .guides,
-html[data-motion="paused"] .guides {
+html.intro-skip .asm-caption,
+html[data-motion="paused"] .guides,
+html[data-motion="paused"] .asm-caption {
   display: none !important;
 }

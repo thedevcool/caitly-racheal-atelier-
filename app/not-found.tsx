@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { db } from "@/lib/db";
+import { PieceWords } from "@/components/Pieces";
 
 export const metadata = { title: "This room is empty" };
 
@@ -30,7 +31,7 @@ export default async function NotFound() {
           className="serif"
           style={{ fontWeight: 500, fontSize: "clamp(40px, 6vw, 64px)", lineHeight: 1, margin: "0 0 14px" }}
         >
-          This room is empty.
+          <PieceWords text="This room is empty." start={1} />
         </h1>
         <p className="ko" lang="ko" style={{ color: "var(--accent)", fontSize: 20, margin: "0 0 32px" }}>
           이 방은 비어 있어요.

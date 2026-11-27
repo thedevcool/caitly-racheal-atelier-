@@ -38,8 +38,6 @@ export function Hero({ settings, image, rooms }: Props) {
           </div>
         </div>
       </div>
-      {/* Faint gold layout gridlines, shown only while the page assembles itself */}
-      <div className="guides" aria-hidden="true" />
       <Nav rooms={rooms} assemble={{ from: words.length + 4 }} />
       <div className="in wrap">
         <p className="hero-ko ko piece" lang="ko" style={piece()}>

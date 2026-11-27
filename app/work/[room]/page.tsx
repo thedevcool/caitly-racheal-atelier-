@@ -7,6 +7,7 @@ import { toViewWork } from "@/lib/view";
 import { PageHead } from "@/components/PageHead";
 import { Gallery } from "@/components/work/Gallery";
 import { Footer } from "@/components/sections/Footer";
+import { PieceWords, piece, wordCount } from "@/components/Pieces";
 
 type Params = { params: Promise<{ room: string }> };
 
@@ -44,17 +45,22 @@ export default async function RoomPage({ params }: Params) {
           aria-labelledby="room-title"
         >
           <div className="wrap">
-            <p className="crumbs">
+            {/* First visit: the nav lands first (pieces 0–2), then these, top to bottom */}
+            <p className="crumbs piece" style={piece(3).style}>
               <Link href="/">Atelier</Link> <span aria-hidden="true">/</span> {room.navLabel}
             </p>
             <h1 id="room-title" className="room-title">
-              <span className="ko" lang="ko">
+              <span className="ko piece" lang="ko" style={piece(4).style}>
                 {room.korean}
               </span>
-              {room.name}
+              <PieceWords text={room.name} start={5} />
             </h1>
-            <p className="room-headline serif">{emphasis(room.headline)}</p>
-            <p className="lede">{room.body}</p>
+            <p className="room-headline serif piece" style={piece(5 + wordCount(room.name)).style}>
+              {emphasis(room.headline)}
+            </p>
+            <p className="lede piece" style={piece(6 + wordCount(room.name)).style}>
+              {room.body}
+            </p>
           </div>
         </section>
 

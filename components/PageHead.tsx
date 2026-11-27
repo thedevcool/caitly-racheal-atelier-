@@ -10,7 +10,7 @@ export function PageHead({
 }) {
   return (
     <header className={tone ? `page-head band tone-${tone}` : "page-head band"}>
-      <Nav rooms={rooms} />
+      <Nav rooms={rooms} assemble={{ from: 0 }} />
     </header>
   );
 }

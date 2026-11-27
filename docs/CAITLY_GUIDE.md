@@ -66,6 +66,9 @@ To **reorder**, drag the dotted handle, or use the ↑ ↓ arrows. To **hide** s
 **Words** holds everything on the home page: the hero, the statement, the commission section and the footer.
 
 - Put **stars around a word** to make it gold italic: `I breathe *life* into brands.`
+- **"The page assembling itself"**: the two short lines shown at the bottom of the screen while a page
+  composes itself on someone's first visit ("Rebranding this page, live", then "Now imagine it's your brand").
+  Keep them short; they show on phones too.
 - Tap **Preview** to open your site in a new tab with your unsaved changes (a gold bar at the bottom says you’re previewing). Nothing is live until you tap **Save changes**.
 - Once all the sample art is replaced, clear the **Small print** under the footer.
 

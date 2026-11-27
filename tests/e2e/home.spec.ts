@@ -213,3 +213,53 @@ test.describe("first-load assembly", () => {
     await paused.close();
   });
 });
+
+test.describe("assembly on each page's first visit", () => {
+  const assembling = (page: import("@playwright/test").Page) =>
+    page.evaluate(
+      () => document.getAnimations().filter((a) => (a as CSSAnimation).animationName === "assemble").length,
+    );
+
+  test("a room reached by in-site navigation assembles with the caption; a revisit doesn't", async ({
+    browser,
+  }) => {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    await page.goto("/");
+    await expect.poll(() => assembling(page), { timeout: 8000 }).toBe(0); // home has finished
+
+    // First visit to a room by in-site navigation: no name intro, but it assembles and narrates
+    await page
+      .locator("#shopfront")
+      .getByRole("link", { name: /Enter the room/ })
+      .click();
+    await expect(page).toHaveURL(/\/work\/shopfront/);
+    await expect(page.locator("html")).toHaveClass(/\bassembling\b/);
+    await expect(page.locator("html")).not.toHaveClass(/\bintro\b/);
+    expect(await assembling(page)).toBeGreaterThan(3);
+    await expect(page.locator(".asm-caption")).toBeVisible();
+    await expect(page.locator(".asm-working")).toContainText("Rebranding this page");
+    await expect(page.locator(".asm-done")).toContainText("your brand");
+    // it finishes and cleans up
+    await expect(page.locator("html")).not.toHaveClass(/\bassembling\b/, { timeout: 6000 });
+    await expect(page.locator(".asm-caption")).toBeHidden();
+
+    // A revisit in the same session doesn't assemble again
+    await page.goto("/work/shopfront");
+    await expect(page.locator("html")).not.toHaveClass(/\bassembling\b/);
+    expect(await assembling(page)).toBe(0);
+    await context.close();
+  });
+
+  test("a page landed on directly also assembles, with the caption hidden from screen readers", async ({
+    browser,
+  }) => {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    await page.goto("/privacy");
+    await expect(page.locator("html")).toHaveClass(/\bassembling\b/);
+    await expect(page.locator(".asm-working")).toHaveText(/\S/);
+    await expect(page.locator(".asm-caption")).toHaveAttribute("aria-hidden", "true");
+    await context.close();
+  });
+});

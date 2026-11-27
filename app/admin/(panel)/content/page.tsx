@@ -68,6 +68,24 @@ export default async function ContentEditor() {
           />
         </Fieldset>
 
+        <Fieldset
+          legend="The page assembling itself"
+          note="On each page's first visit, the page arrives in pieces and composes itself. These two lines narrate it at the bottom of the screen."
+        >
+          <TextField
+            label="While it assembles"
+            name="assembleWorking"
+            defaultValue={s.assembleWorking}
+            maxLength={90}
+          />
+          <TextField
+            label="When it's done"
+            name="assembleDone"
+            defaultValue={s.assembleDone}
+            maxLength={90}
+          />
+        </Fieldset>
+
         <Fieldset legend="Footer">
           <TextField label="Tagline" name="footerTagline" defaultValue={s.footerTagline} />
           <TextArea

@@ -21,6 +21,8 @@ const schema = z.object({
   contactIntro: req("The intro", 400),
   contactButton: req("The button", 40),
   footerTagline: req("The tagline", 120),
+  assembleWorking: req("The assembling caption", 90),
+  assembleDone: req("The finished caption", 90),
   footerNote: optional(300),
 });
 

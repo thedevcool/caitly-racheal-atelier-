@@ -63,14 +63,21 @@ export const viewport: Viewport = {
 };
 
 // A fixed string (no visitor or admin text), so inlining it is safe.
-// A tap or key in the first 3.5s skips the intro and the assembly.
+// Runs before first paint: restores a paused-motion choice, and decides whether
+// this page is new to the visitor this session. If so it "assembles" (pieces fly
+// into place); the first page of the session also gets the name intro.
+// A tap or key in the first 3.5s skips both. In-site navigations are handled by
+// app/template.tsx with the same "atelier-seen" list.
 const EARLY = `(function(){var d=document.documentElement;d.classList.add('js');
 try{if(localStorage.getItem('atelier-motion')==='paused')d.dataset.motion='paused'}catch(e){}
 if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;d.classList.add('motion');
-try{if(location.pathname.indexOf('/admin')!==0&&!sessionStorage.getItem('atelier-intro')){
-d.classList.add('intro');sessionStorage.setItem('atelier-intro','1');
+var p=location.pathname;if(p.indexOf('/admin')===0||d.dataset.motion==='paused')return;
+try{var s=sessionStorage,seen=JSON.parse(s.getItem('atelier-seen')||'[]');
+if(seen==='*'||seen.indexOf(p)>-1)return;seen.push(p);s.setItem('atelier-seen',JSON.stringify(seen));
+var first=!s.getItem('atelier-intro');if(first){d.classList.add('intro');s.setItem('atelier-intro','1')}
+d.classList.add('assembling');setTimeout(function(){d.classList.remove('assembling')},first?5800:4400);
 var t0=Date.now(),skip=function(){if(Date.now()-t0<3500){var o=document.querySelector('[data-intro]');if(o)o.style.display='none';d.classList.add('intro-skip')}
-removeEventListener('click',skip);removeEventListener('keydown',skip)};addEventListener('click',skip);addEventListener('keydown',skip);}}catch(e){}})();`;
+removeEventListener('click',skip);removeEventListener('keydown',skip)};addEventListener('click',skip);addEventListener('keydown',skip);}catch(e){}})();`;
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const settings = await getSettings();
@@ -93,6 +100,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           {/* Whole-page breathing vignette (decorative; see "Breath" in globals.css) */}
           <div className="breath-veil" aria-hidden="true" />
           <div className="grain" aria-hidden="true" />
+          {/* While a page assembles itself: design gridlines and a caption narrating it */}
+          <div className="guides" aria-hidden="true" />
+          <div className="asm-caption" aria-hidden="true">
+            <span className="asm-working">{settings?.assembleWorking}</span>
+            <span className="asm-done">{settings?.assembleDone}</span>
+          </div>
           <div className="intro-overlay" aria-hidden="true" data-intro>
             <div className="intro-name">
               <b>Caitly Racheal</b>
