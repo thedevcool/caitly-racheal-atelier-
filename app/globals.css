@@ -2674,19 +2674,18 @@ html.lenis body {
 }
 
 /* ==========================================================================
-   Assemble: the first time a visitor sees each page in a session, the page
-   arrives in pieces and composes itself in front of them, like a designer
+   Assemble: every time a visitor opens a page, it arrives in pieces flung
+   all over (and off) the screen and composes itself in front of them, like a designer
    laying out the page live, while a caption narrates it ("Rebranding this
    page, live" → "Now imagine it's your brand"). Proof of craft, not decoration.
 
    Who decides: the early script in app/layout.tsx (first page, before paint)
-   and app/template.tsx (in-site navigation) add html.assembling for a page
-   not yet in sessionStorage "atelier-seen", then remove it when done. The
-   first page of the session also has html.intro (the name intro), so its
-   assembly starts later.
+   and app/template.tsx (in-site navigation) add html.assembling on every page
+   view, then remove it when done. The first page of the session also has
+   html.intro (the name intro, once per session), so its assembly starts later.
 
    Timeline from --asm (1.35s after the intro; 0.2s on later pages):
-     gridlines fade in → the silk settles (home) → pieces fly into place 70ms
+     gridlines fade in → the silk settles (home) → pieces fly into place 60ms
      apart, each with a thin gold "selection" frame that fades as it lands →
      the caption switches to "done" → everything fades by about --asm + 3.8s
 
@@ -2694,7 +2693,8 @@ html.lenis body {
    - only transform and opacity animate; pieces must be block or inline-block
    - pieces use fill-mode "backwards" (never "forwards"/"both"): scattered during
      the delay, and once landed the CSS lets go, so GSAP effects keep working
-   - offsets come from lib/scatter.ts as --sx/--sy/--sr/--d
+   - offsets come from lib/scatter.ts as --sx/--sy/--sr/--ss/--d; pieces that
+     start off-screen can't cause sideways scroll (body is overflow-x: clip)
    - off under reduced motion (no "motion" class) and when motion is paused;
      a tap or key skips it (html.intro-skip)
    ========================================================================== */
@@ -2763,13 +2763,16 @@ html.motion.assembling .hero-shift {
 /* Each piece flies from its scattered spot into place */
 html.motion.assembling .piece {
   position: relative;
-  animation: assemble 1.15s var(--ease-silk) backwards;
+  animation: assemble 1.5s var(--ease-silk) backwards;
   animation-delay: calc(var(--asm) + var(--d, 0ms));
 }
 @keyframes assemble {
   from {
-    transform: translate(var(--sx, 0), var(--sy, 0)) rotate(var(--sr, 0deg)) scale(0.92);
-    opacity: 0.75;
+    transform: translate(var(--sx, 0), var(--sy, 0)) rotate(var(--sr, 0deg)) scale(var(--ss, 0.92));
+    opacity: 0;
+  }
+  35% {
+    opacity: 1;
   }
 }
 /* Headline words arrive by assembly instead of the usual rise. Duration 0
@@ -2789,7 +2792,7 @@ html.motion.assembling .piece::after {
   border-radius: inherit;
   pointer-events: none;
   opacity: 0;
-  animation: frame 1.15s ease-out backwards;
+  animation: frame 1.5s ease-out backwards;
   animation-delay: calc(var(--asm) + var(--d, 0ms));
 }
 @keyframes frame {

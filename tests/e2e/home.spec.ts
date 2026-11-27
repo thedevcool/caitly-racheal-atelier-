@@ -214,13 +214,13 @@ test.describe("first-load assembly", () => {
   });
 });
 
-test.describe("assembly on each page's first visit", () => {
+test.describe("assembly on every page view", () => {
   const assembling = (page: import("@playwright/test").Page) =>
     page.evaluate(
       () => document.getAnimations().filter((a) => (a as CSSAnimation).animationName === "assemble").length,
     );
 
-  test("a room reached by in-site navigation assembles with the caption; a revisit doesn't", async ({
+  test("a room reached by in-site navigation assembles with the caption, and again on a revisit", async ({
     browser,
   }) => {
     const context = await browser.newContext();
@@ -228,7 +228,7 @@ test.describe("assembly on each page's first visit", () => {
     await page.goto("/");
     await expect.poll(() => assembling(page), { timeout: 8000 }).toBe(0); // home has finished
 
-    // First visit to a room by in-site navigation: no name intro, but it assembles and narrates
+    // A room by in-site navigation: no name intro, but it assembles and narrates
     await page
       .locator("#shopfront")
       .getByRole("link", { name: /Enter the room/ })
@@ -244,10 +244,11 @@ test.describe("assembly on each page's first visit", () => {
     await expect(page.locator("html")).not.toHaveClass(/\bassembling\b/, { timeout: 6000 });
     await expect(page.locator(".asm-caption")).toBeHidden();
 
-    // A revisit in the same session doesn't assemble again
+    // Every visit plays it again (but the name intro stays once per session)
     await page.goto("/work/shopfront");
-    await expect(page.locator("html")).not.toHaveClass(/\bassembling\b/);
-    expect(await assembling(page)).toBe(0);
+    await expect(page.locator("html")).toHaveClass(/\bassembling\b/);
+    await expect(page.locator("html")).not.toHaveClass(/\bintro\b/);
+    expect(await assembling(page)).toBeGreaterThan(3);
     await context.close();
   });
 
