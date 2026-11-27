@@ -2013,7 +2013,7 @@ html.motion .hero h1 em {
   animation: shimmer-text 1.8s ease-in-out 1.1s 1 both;
 }
 html.motion.intro .hero h1 em {
-  animation-delay: 2.1s;
+  animation-delay: 3.4s; /* after the page has assembled itself */
 }
 @keyframes shimmer-text {
   to {
@@ -2653,4 +2653,137 @@ html.lenis body {
 }
 .skip:focus {
   top: 16px;
+}
+
+/* ==========================================================================
+   Assemble: on the first visit of a session, the hero arrives in pieces and
+   composes itself in front of the visitor, like a designer laying out a page.
+
+   Timeline (seconds from load), all pure CSS so nothing flashes or waits on
+   JavaScript:
+     0.0–1.4  the name intro plays over the page (already built)
+     1.0      faint gold layout gridlines appear behind the pieces
+     1.2      the silk settles from a tilt
+     1.35+    each piece (Korean line, every headline word, intro, buttons,
+              then the nav) flies from its scattered spot into place, 70ms apart,
+              with a thin gold "selection" frame that fades as it lands
+     ~3.4     gridlines fade; "life" shimmers once
+
+   Rules that keep it safe:
+   - only transform and opacity animate
+   - fill-mode "backwards" (never "forwards"/"both"): the scattered start state
+     applies during the delay, and once landed the CSS lets go, so GSAP's
+     magnetic buttons and pointer shift keep working
+   - scatter offsets come from lib/scatter.ts as --sx/--sy/--sr/--d
+   - off under reduced motion (no "motion" class), when the visitor has paused
+     motion, and instantly skipped by a tap or key (html.intro-skip)
+   ========================================================================== */
+.guides {
+  display: none;
+}
+html.motion.intro .guides {
+  display: block;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  /* 4 columns on phones, 12 on desktop, plus a few baselines: a design canvas */
+  --cols: 4;
+  background:
+    repeating-linear-gradient(
+        90deg,
+        rgba(212, 180, 122, 0.22) 0 1px,
+        transparent 1px calc((100% - 2 * max(5vw, 20px)) / var(--cols))
+      )
+      max(5vw, 20px) 0 / calc(100% - 2 * max(5vw, 20px) + 1px) 100% no-repeat,
+    repeating-linear-gradient(0deg, rgba(212, 180, 122, 0.12) 0 1px, transparent 1px 25%);
+  opacity: 0;
+  animation: guides 3.6s linear forwards;
+}
+@media (min-width: 901px) {
+  html.motion.intro .guides {
+    --cols: 12;
+  }
+}
+@keyframes guides {
+  0%,
+  26% {
+    opacity: 0;
+  }
+  38%,
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* The silk settles from a tilt (on the pointer-shift layer, so the breath and
+   Ken Burns layers underneath keep their own animations) */
+html.motion.intro .hero-shift {
+  animation: settle 1.8s var(--ease-silk) 1.15s backwards;
+}
+@keyframes settle {
+  from {
+    transform: rotate(-5deg) scale(1.28);
+  }
+}
+
+/* Each piece flies from its scattered spot into place */
+html.motion.intro .piece {
+  position: relative;
+  animation: assemble 1.15s var(--ease-silk) backwards;
+  animation-delay: calc(1.35s + var(--d, 0ms));
+}
+@keyframes assemble {
+  from {
+    transform: translate(var(--sx, 0), var(--sy, 0)) rotate(var(--sr, 0deg)) scale(0.92);
+    opacity: 0.75;
+  }
+}
+/* the headline words arrive by assembly instead of the usual rise */
+html.motion.intro .hw-i {
+  animation: none;
+}
+/* a thin gold selection frame, like a layer being placed in a design tool */
+html.motion.intro .piece::after {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border: 1px solid rgba(212, 180, 122, 0.75);
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  animation: frame 1.15s ease-out backwards;
+  animation-delay: calc(1.35s + var(--d, 0ms));
+}
+@keyframes frame {
+  0%,
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+/* .hw clips its word for the normal rise; let the frame show while assembling */
+html.motion.intro .hw {
+  overflow: visible;
+}
+
+/* Skipped (tap/key) or motion paused: everything simply in place */
+html.intro-skip .piece,
+html.intro-skip .piece::after,
+html.intro-skip .hero-shift,
+html.intro-skip .guides,
+html[data-motion="paused"] .piece,
+html[data-motion="paused"] .piece::after,
+html[data-motion="paused"] .hero-shift,
+html[data-motion="paused"] .guides {
+  animation: none !important;
+}
+html.intro-skip .guides,
+html[data-motion="paused"] .guides {
+  display: none !important;
 }

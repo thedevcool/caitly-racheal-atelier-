@@ -63,12 +63,14 @@ export const viewport: Viewport = {
 };
 
 // A fixed string (no visitor or admin text), so inlining it is safe.
+// A tap or key in the first 3.5s skips the intro and the assembly.
 const EARLY = `(function(){var d=document.documentElement;d.classList.add('js');
 try{if(localStorage.getItem('atelier-motion')==='paused')d.dataset.motion='paused'}catch(e){}
 if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;d.classList.add('motion');
 try{if(location.pathname.indexOf('/admin')!==0&&!sessionStorage.getItem('atelier-intro')){
 d.classList.add('intro');sessionStorage.setItem('atelier-intro','1');
-addEventListener('click',function s(){var o=document.querySelector('[data-intro]');if(o)o.style.display='none';removeEventListener('click',s)});}}catch(e){}})();`;
+var t0=Date.now(),skip=function(){if(Date.now()-t0<3500){var o=document.querySelector('[data-intro]');if(o)o.style.display='none';d.classList.add('intro-skip')}
+removeEventListener('click',skip);removeEventListener('keydown',skip)};addEventListener('click',skip);addEventListener('keydown',skip);}}catch(e){}})();`;
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const settings = await getSettings();

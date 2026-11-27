@@ -159,3 +159,57 @@ test("the intro plays once per session, then never again", async ({ browser }) =
   await expect(page.locator("html")).not.toHaveClass(/\bintro\b/);
   await context.close();
 });
+
+test.describe("first-load assembly", () => {
+  const assembling = (page: import("@playwright/test").Page) =>
+    page.evaluate(
+      () =>
+        document.getAnimations().filter((a) => /^(assemble|settle)$/.test((a as CSSAnimation).animationName))
+          .length,
+    );
+
+  test("the hero arrives in pieces and every piece lands in place", async ({ browser }) => {
+    const context = await browser.newContext(); // a true first visit (no fixture)
+    const page = await context.newPage();
+    await page.goto("/");
+    expect(await page.locator(".hero .piece").count()).toBeGreaterThan(8);
+    expect(await assembling(page)).toBeGreaterThan(8);
+    await expect(page.locator(".guides")).toBeAttached();
+    // settled: nothing still moving, every piece exactly in place
+    await expect.poll(() => assembling(page), { timeout: 6000 }).toBe(0);
+    const offset = await page.evaluate(
+      () =>
+        [...document.querySelectorAll(".piece:not(.btn)")].filter(
+          (e) => getComputedStyle(e).transform !== "none",
+        ).length,
+    );
+    expect(offset).toBe(0);
+    await context.close();
+  });
+
+  test("a tap skips straight to the finished page", async ({ browser }) => {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    // tap as soon as the page is there, well inside the 3.5s skip window
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await page.mouse.click(5, 5);
+    await expect(page.locator("html")).toHaveClass(/intro-skip/);
+    expect(await assembling(page)).toBe(0);
+    await context.close();
+  });
+
+  test("never plays under reduced motion or when motion is paused", async ({ browser }) => {
+    const reduced = await browser.newContext({ reducedMotion: "reduce" });
+    const r = await reduced.newPage();
+    await r.goto("/");
+    expect(await assembling(r)).toBe(0);
+    await reduced.close();
+
+    const paused = await browser.newContext();
+    await paused.addInitScript(() => localStorage.setItem("atelier-motion", "paused"));
+    const p = await paused.newPage();
+    await p.goto("/");
+    expect(await assembling(p)).toBe(0);
+    await paused.close();
+  });
+});

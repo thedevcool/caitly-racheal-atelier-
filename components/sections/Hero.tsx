@@ -2,6 +2,7 @@ import type { Media, SiteSettings } from "@prisma/client";
 import { emphasisWords } from "@/lib/emphasis";
 import { MediaImage } from "@/components/ui/MediaImage";
 import { Nav } from "@/components/Nav";
+import { scatter } from "@/lib/scatter";
 
 type Props = {
   settings: SiteSettings;
@@ -11,6 +12,10 @@ type Props = {
 
 export function Hero({ settings, image, rooms }: Props) {
   const firstRoom = rooms[0]?.slug ?? "commission";
+  const words = emphasisWords(settings.heroHeadline);
+  // Assembly order on first load: Korean line, headline words, intro, buttons, then the nav
+  let n = 0;
+  const piece = () => scatter(n++);
   return (
     <header className="hero" id="top">
       {/*
@@ -33,17 +38,19 @@ export function Hero({ settings, image, rooms }: Props) {
           </div>
         </div>
       </div>
-      <Nav rooms={rooms} />
+      {/* Faint gold layout gridlines, shown only while the page assembles itself */}
+      <div className="guides" aria-hidden="true" />
+      <Nav rooms={rooms} assemble={{ from: words.length + 4 }} />
       <div className="in wrap">
-        <p className="hero-ko ko" lang="ko">
+        <p className="hero-ko ko piece" lang="ko" style={piece()}>
           {settings.heroKorean}
         </p>
         {/* Words are server-rendered spans so the word-by-word reveal is pure CSS (no flash, no JS wait) */}
         <h1>
-          {emphasisWords(settings.heroHeadline).map((w, i) => (
+          {words.map((w, i) => (
             <span key={i}>
               {w.space && " "}
-              <span className="hw">
+              <span className="hw piece" style={piece()}>
                 <span className="hw-i" style={{ "--i": i } as React.CSSProperties}>
                   {w.em ? <em>{w.word}</em> : w.word}
                 </span>
@@ -52,12 +59,14 @@ export function Hero({ settings, image, rooms }: Props) {
           ))}
         </h1>
         <div className="row">
-          <p className="intro">{settings.heroIntro}</p>
+          <p className="intro piece" style={piece()}>
+            {settings.heroIntro}
+          </p>
           <div className="ctas">
-            <a className="btn gold" href="#commission" data-magnetic>
+            <a className="btn gold piece" href="#commission" data-magnetic style={piece()}>
               {settings.heroCtaPrimary}
             </a>
-            <a className="btn ghost" href={`#${firstRoom}`}>
+            <a className="btn ghost piece" href={`#${firstRoom}`} style={piece()}>
               {settings.heroCtaSecondary}
             </a>
           </div>
