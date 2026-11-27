@@ -29,6 +29,8 @@ model SiteSettings {
   contactButton    String   @default("Send my brief") // added
   contactImageId   String?
   footerTagline    String   @default("아름다움은 팔린다 — beauty sells") // added
+  assembleWorking  String   @default("숨을 불어넣는 중 · Rebranding this page, live") // added: caption while a page assembles
+  assembleDone     String   @default("완성 · Now imagine it’s your brand.") // added: caption once it's composed
   footerNote       String? // added: small print under the footer
   displayEmail     String?
   notifyEmail      String // where enquiry notifications go (her own inbox)

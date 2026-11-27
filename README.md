@@ -36,7 +36,9 @@ The site and the admin are built for phones first; larger screens are enhancemen
 - **The page breathes**: one shared 10-second breath (≈4s in, 6s out) across the artwork and the hero headline,
   with a vignette that opens on the inhale. A pause button sits beside the theme toggle.
 - **Motion (brief §9):**
-  - smooth scroll (Lenis + GSAP) and a once-per-session intro
+  - smooth scroll (Lenis + GSAP) and a once-per-session name intro, and **each page assembles itself on its first visit**: it arrives in
+    pieces over gold layout gridlines and flies into place while a caption narrates ("Rebranding this page, live"
+    → "Now imagine it's your brand", editable in the admin). Pure CSS, tap to skip; see "Assemble" in `globals.css`
   - route fades with a gold progress line
   - headings that rise line by line
   - hero parallax, pointer and tilt shift

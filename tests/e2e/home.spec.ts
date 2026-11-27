@@ -159,3 +159,135 @@ test("the intro plays once per session, then never again", async ({ browser }) =
   await expect(page.locator("html")).not.toHaveClass(/\bintro\b/);
   await context.close();
 });
+
+test.describe("first-load assembly", () => {
+  const assembling = (page: import("@playwright/test").Page) =>
+    page.evaluate(
+      () =>
+        document.getAnimations().filter((a) => /^(assemble|settle)$/.test((a as CSSAnimation).animationName))
+          .length,
+    );
+
+  test("the hero arrives in pieces and every piece lands in place", async ({ browser }) => {
+    const context = await browser.newContext(); // a true first visit (no fixture)
+    const page = await context.newPage();
+    await page.goto("/");
+    expect(await page.locator(".hero .piece").count()).toBeGreaterThan(8);
+    expect(await assembling(page)).toBeGreaterThan(8);
+    await expect(page.locator(".guides")).toBeAttached();
+    // settled: nothing still moving, every piece exactly in place
+    await expect.poll(() => assembling(page), { timeout: 6000 }).toBe(0);
+    const offset = await page.evaluate(
+      () =>
+        [...document.querySelectorAll(".piece:not(.btn)")].filter(
+          (e) => getComputedStyle(e).transform !== "none",
+        ).length,
+    );
+    expect(offset).toBe(0);
+    await context.close();
+  });
+
+  test("a tap skips straight to the finished page", async ({ browser }) => {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    // tap as soon as the page is there, well inside the 3.5s skip window
+    await page.goto("/", { waitUntil: "domcontentloaded" });
+    await page.mouse.click(5, 5);
+    await expect(page.locator("html")).toHaveClass(/intro-skip/);
+    expect(await assembling(page)).toBe(0);
+    await context.close();
+  });
+
+  test("never plays under reduced motion or when motion is paused", async ({ browser }) => {
+    const reduced = await browser.newContext({ reducedMotion: "reduce" });
+    const r = await reduced.newPage();
+    await r.goto("/");
+    expect(await assembling(r)).toBe(0);
+    await reduced.close();
+
+    const paused = await browser.newContext();
+    await paused.addInitScript(() => localStorage.setItem("atelier-motion", "paused"));
+    const p = await paused.newPage();
+    await p.goto("/");
+    expect(await assembling(p)).toBe(0);
+    await paused.close();
+  });
+});
+
+test.describe("assembly on each page's first visit", () => {
+  const assembling = (page: import("@playwright/test").Page) =>
+    page.evaluate(
+      () => document.getAnimations().filter((a) => (a as CSSAnimation).animationName === "assemble").length,
+    );
+
+  test("a room reached by in-site navigation assembles with the caption; a revisit doesn't", async ({
+    browser,
+  }) => {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    await page.goto("/");
+    await expect.poll(() => assembling(page), { timeout: 8000 }).toBe(0); // home has finished
+
+    // First visit to a room by in-site navigation: no name intro, but it assembles and narrates
+    await page
+      .locator("#shopfront")
+      .getByRole("link", { name: /Enter the room/ })
+      .click();
+    await expect(page).toHaveURL(/\/work\/shopfront/);
+    await expect(page.locator("html")).toHaveClass(/\bassembling\b/);
+    await expect(page.locator("html")).not.toHaveClass(/\bintro\b/);
+    expect(await assembling(page)).toBeGreaterThan(3);
+    await expect(page.locator(".asm-caption")).toBeVisible();
+    await expect(page.locator(".asm-working")).toContainText("Rebranding this page");
+    await expect(page.locator(".asm-done")).toContainText("your brand");
+    // it finishes and cleans up
+    await expect(page.locator("html")).not.toHaveClass(/\bassembling\b/, { timeout: 6000 });
+    await expect(page.locator(".asm-caption")).toBeHidden();
+
+    // A revisit in the same session doesn't assemble again
+    await page.goto("/work/shopfront");
+    await expect(page.locator("html")).not.toHaveClass(/\bassembling\b/);
+    expect(await assembling(page)).toBe(0);
+    await context.close();
+  });
+
+  test("a page landed on directly also assembles, with the caption hidden from screen readers", async ({
+    browser,
+  }) => {
+    const context = await browser.newContext();
+    const page = await context.newPage();
+    await page.goto("/privacy");
+    await expect(page.locator("html")).toHaveClass(/\bassembling\b/);
+    await expect(page.locator(".asm-working")).toHaveText(/\S/);
+    await expect(page.locator(".asm-caption")).toHaveAttribute("aria-hidden", "true");
+    await context.close();
+  });
+});
+
+test("with reduced motion the contact form can still be filled in and sent", async ({ browser }) => {
+  const context = await browser.newContext({ reducedMotion: "reduce" });
+  await context.addInitScript(() => {
+    sessionStorage.setItem("atelier-intro", "1");
+    sessionStorage.setItem("atelier-seen", JSON.stringify("*"));
+  });
+  const page = await context.newPage();
+  await page.goto("/#commission");
+  const form = page.getByRole("form", { name: "Commission enquiry" });
+  await expect(form.getByRole("button", { name: "Send my brief" })).toBeEnabled();
+  // nothing may sit on top of the fields (the hidden thank-you side once did)
+  await form.getByRole("textbox", { name: "Your name" }).fill("Calm Visitor");
+  await form.getByRole("textbox", { name: "Email" }).fill("calm@example.test");
+  await form
+    .getByRole("textbox", { name: "Tell me about the piece" })
+    .fill("A calm brief, sent with reduced motion on.");
+  await page.waitForTimeout(3200);
+  // Like a person: finish typing, bring Send into view, then tap where it actually is
+  // (a real tap at the button's position, so nothing on top of it may swallow it)
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+  const send = form.getByRole("button", { name: "Send my brief" });
+  await send.evaluate((el) => el.scrollIntoView({ block: "center" }));
+  const box = (await send.boundingBox())!;
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+  await expect(page.locator(".brief-back")).toContainText("감사합니다", { timeout: 15_000 });
+  await context.close();
+});

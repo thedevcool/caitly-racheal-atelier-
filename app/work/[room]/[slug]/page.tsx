@@ -6,6 +6,7 @@ import { getCaseStudyParams, getSettings, getWorkPage } from "@/lib/content";
 import { absoluteUrl } from "@/lib/view";
 import { PageHead } from "@/components/PageHead";
 import { Footer } from "@/components/sections/Footer";
+import { PieceWords, piece, wordCount } from "@/components/Pieces";
 
 type Params = { params: Promise<{ room: string; slug: string }> };
 
@@ -33,13 +34,17 @@ export default async function CaseStudy({ params }: Params) {
       <PageHead rooms={navRooms} />
       <main id="main" className="band case">
         <article className="wrap">
-          <p className="crumbs">
+          <p className="crumbs piece" style={piece(3).style}>
             <Link href="/">Atelier</Link> <span aria-hidden="true">/</span>{" "}
             <Link href={`/work/${work.room.slug}`}>{work.room.navLabel}</Link>
           </p>
-          <h1 className="room-title">{work.title}</h1>
-          <p className="viewer-meta">{[work.category, work.client].filter(Boolean).join(" · ")}</p>
-          <div className="case-media">
+          <h1 className="room-title">
+            <PieceWords text={work.title} start={4} />
+          </h1>
+          <p className="viewer-meta piece" style={piece(4 + wordCount(work.title)).style}>
+            {[work.category, work.client].filter(Boolean).join(" · ")}
+          </p>
+          <div className="case-media piece" style={piece(5 + wordCount(work.title)).style}>
             {work.mediaType === "VIDEO" && work.media ? (
               <video
                 src={work.media.url}

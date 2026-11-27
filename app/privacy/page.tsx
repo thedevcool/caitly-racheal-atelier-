@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { getSettings } from "@/lib/content";
 import { PageHead } from "@/components/PageHead";
 import { Footer } from "@/components/sections/Footer";
+import { PieceWords, piece } from "@/components/Pieces";
 
 export const metadata: Metadata = { title: "Privacy", alternates: { canonical: "/privacy" } };
 
@@ -24,8 +25,12 @@ export default async function Privacy() {
       <PageHead rooms={rooms} />
       <main id="main" className="band prose">
         <div className="wrap">
-          <h1 className="room-title">Privacy</h1>
-          <p className="lede">A short, plain note about what happens when you send a brief.</p>
+          <h1 className="room-title">
+            <PieceWords text="Privacy" start={3} />
+          </h1>
+          <p className="lede piece" style={piece(4).style}>
+            A short, plain note about what happens when you send a brief.
+          </p>
           <h2>What the form collects</h2>
           <p>
             Your name, your email address, which room your project belongs to, and the message you write.

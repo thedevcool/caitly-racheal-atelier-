@@ -14,6 +14,8 @@ const CONTENT = [
   "contactButton",
   "footerTagline",
   "footerNote",
+  "assembleWorking",
+  "assembleDone",
 ];
 const ROOM = [
   "name",
