@@ -497,7 +497,8 @@ TURNSTILE_SECRET_KEY=
 - **Seeded packages are drafts** (`visible: false`, price "From [your price]"), so the Packages strip stays hidden until Caitly sets real prices.
 - **The page breathes** (requested by the client after phase 1). One shared 10s rhythm (≈4s inhale, 6s exhale) makes the artwork and hero headline swell and settle together, and a fixed vignette over the whole viewport (`.breath-veil`) opens on the inhale. Only transform and opacity animate. A pause button sits beside the theme toggle (WCAG 2.2.2) and is remembered; `prefers-reduced-motion` turns it all off. In phase 5, keep every new animation in step with `--breath-dur` and don't fight it: the Ken Burns drift and parallax sit on the image inside `.hero-media`, which itself breathes.
 - **Pages assemble themselves (requested by the client).** Every time a visitor opens a page, it arrives in
-  pieces flung all over (and off) the screen, spinning and at odd sizes, over faint gold gridlines, and flies into place, with thin gold "selection" frames, while a
+  pieces flung all over (and off) the screen, spinning and at odd sizes, over faint gold gridlines, and slowly flies into place (on the home page the silk
+  first drops in as a small framed portrait on a gold wire, swings, hangs, then widens into the full background), with thin gold "selection" frames, while a
   caption narrates it: `SiteSettings.assembleWorking` ("숨을 불어넣는 중 · Rebranding this page, live") then
   `assembleDone` ("완성 · Now imagine it's your brand."), both editable under Words. It's proof that the studio can
   rebrand a business. The first page of the session also gets the name intro. The early script in

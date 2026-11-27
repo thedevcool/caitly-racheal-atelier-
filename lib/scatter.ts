@@ -19,6 +19,6 @@ export function scatter(i: number): CSSProperties {
     "--sy": `${(Math.sin(angle) * r).toFixed(1)}vh`,
     "--sr": `${((i * 137) % 361) - 180}deg`,
     "--ss": (0.35 + ((i * 53) % 155) / 100).toFixed(2),
-    "--d": `${i * 60}ms`,
+    "--d": `${i * 110}ms`,
   } as CSSProperties;
 }

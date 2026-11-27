@@ -37,7 +37,10 @@ export default function Template({ children }: { children: React.ReactNode }) {
     void d.offsetWidth;
     d.classList.add("assembling");
     clearTimeout(assemblyTimer);
-    assemblyTimer = setTimeout(() => d.classList.remove("assembling"), 4800);
+    assemblyTimer = setTimeout(
+      () => d.classList.remove("assembling"),
+      document.querySelector(".hero") ? 9600 : 7400,
+    );
 
     const t0 = Date.now();
     const off = () => {
@@ -45,7 +48,7 @@ export default function Template({ children }: { children: React.ReactNode }) {
       removeEventListener("keydown", skip);
     };
     const skip = () => {
-      if (Date.now() - t0 < 3500) d.classList.add("intro-skip");
+      if (Date.now() - t0 < 7000) d.classList.add("intro-skip");
       off();
     };
     addEventListener("click", skip);

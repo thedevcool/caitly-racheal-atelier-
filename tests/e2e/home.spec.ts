@@ -164,7 +164,7 @@ test.describe("first-load assembly", () => {
   const assembling = (page: import("@playwright/test").Page) =>
     page.evaluate(
       () =>
-        document.getAnimations().filter((a) => /^(assemble|settle)$/.test((a as CSSAnimation).animationName))
+        document.getAnimations().filter((a) => /^(assemble|hang)$/.test((a as CSSAnimation).animationName))
           .length,
     );
 
@@ -176,7 +176,7 @@ test.describe("first-load assembly", () => {
     expect(await assembling(page)).toBeGreaterThan(8);
     await expect(page.locator(".guides")).toBeAttached();
     // settled: nothing still moving, every piece exactly in place
-    await expect.poll(() => assembling(page), { timeout: 6000 }).toBe(0);
+    await expect.poll(() => assembling(page), { timeout: 13000 }).toBe(0);
     const offset = await page.evaluate(
       () =>
         [...document.querySelectorAll(".piece:not(.btn)")].filter(
@@ -190,7 +190,7 @@ test.describe("first-load assembly", () => {
   test("a tap skips straight to the finished page", async ({ browser }) => {
     const context = await browser.newContext();
     const page = await context.newPage();
-    // tap as soon as the page is there, well inside the 3.5s skip window
+    // tap as soon as the page is there, well inside the skip window
     await page.goto("/", { waitUntil: "domcontentloaded" });
     await page.mouse.click(5, 5);
     await expect(page.locator("html")).toHaveClass(/intro-skip/);
@@ -226,7 +226,7 @@ test.describe("assembly on every page view", () => {
     const context = await browser.newContext();
     const page = await context.newPage();
     await page.goto("/");
-    await expect.poll(() => assembling(page), { timeout: 8000 }).toBe(0); // home has finished
+    await expect.poll(() => assembling(page), { timeout: 13000 }).toBe(0); // home has finished
 
     // A room by in-site navigation: no name intro, but it assembles and narrates
     await page
@@ -241,7 +241,7 @@ test.describe("assembly on every page view", () => {
     await expect(page.locator(".asm-working")).toContainText("Rebranding this page");
     await expect(page.locator(".asm-done")).toContainText("your brand");
     // it finishes and cleans up
-    await expect(page.locator("html")).not.toHaveClass(/\bassembling\b/, { timeout: 6000 });
+    await expect(page.locator("html")).not.toHaveClass(/\bassembling\b/, { timeout: 10000 });
     await expect(page.locator(".asm-caption")).toBeHidden();
 
     // Every visit plays it again (but the name intro stays once per session)
