@@ -62,6 +62,7 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm prisma generate # a fresh install doesn't generate the client
       # Same steps as Vercel's build (see "vercel-build" in package.json)
       - run: pnpm prisma migrate deploy
       - run: pnpm prisma db seed
