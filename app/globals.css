@@ -2104,8 +2104,11 @@ html.intro .intro-overlay {
 }
 
 /* ---- Route transitions ---- */
+/* "backwards", not "both": a transform held after the fade ends would make
+   this wrapper the containing block for fixed elements inside the page (the
+   preview bar ended up at the bottom of the page instead of the screen). */
 .route-fade {
-  animation: route-in 0.8s var(--ease-silk) both;
+  animation: route-in 0.8s var(--ease-silk) backwards;
 }
 @keyframes route-in {
   from {

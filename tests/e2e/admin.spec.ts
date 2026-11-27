@@ -27,6 +27,8 @@ test("a wrong password is refused and the email is kept", async ({ page }) => {
 
 test("Caitly can sign in and sees her dashboard and checklist", async ({ page }) => {
   await signIn(page);
+  // straight after signing in (an in-app navigation), Sign out must be reachable, phones included
+  await expect(page.getByRole("button", { name: "Sign out" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Replace the sample art" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Replace" }).first()).toBeVisible();
 });
@@ -92,7 +94,9 @@ test("a failed save keeps unsaved edits, and Preview shows them without saving",
     page.getByRole("button", { name: "Preview" }).click(),
   ]);
   await expect(preview.locator(".hero .intro")).toHaveText("An unsaved intro for the preview test.");
-  await expect(preview.getByRole("status").filter({ hasText: "Previewing unsaved changes" })).toBeVisible();
+  const bar = preview.getByRole("status").filter({ hasText: "Previewing unsaved changes" });
+  await expect(bar).toBeVisible();
+  await expect(bar).toBeInViewport(); // pinned to the screen, not lost at the bottom of the page
   await preview.getByRole("link", { name: "Exit preview" }).click();
   await expect(preview.locator(".hero .intro")).not.toHaveText("An unsaved intro for the preview test.");
 });

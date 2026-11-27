@@ -124,8 +124,10 @@ body:has(.admin-root) .skip {
   flex: none;
   scroll-snap-align: start;
 }
-.a-top-actions .a-link:first-child {
-  display: none; /* "View site" lives in the nav row's reach on phones */
+/* Phones: hide only "View site" (a direct child). Not "Sign out", which is the
+   first child of its own form after an in-app navigation. */
+.a-top-actions > .a-link:first-child {
+  display: none;
 }
 @media (min-width: 801px) {
   .a-shell {
@@ -146,7 +148,7 @@ body:has(.admin-root) .skip {
     position: sticky;
     top: 90px;
   }
-  .a-top-actions .a-link:first-child {
+  .a-top-actions > .a-link:first-child {
     display: inline-flex;
   }
 }
